@@ -1,5 +1,9 @@
-function App() {
-  return <h1>Hello World</h1>;
-}
+import { AppLayout } from "./layout/AppLayout";
 
-export default App;
+export function App() {
+  return (
+    <AppLayout activePage="user">
+      <div></div>
+    </AppLayout>
+  );
+}
