@@ -1,0 +1,70 @@
+<svg
+  width="56"
+  height="56"
+  viewBox="0 0 256 256"
+  fill="none"
+  xmlns="http://www.w3.org/2000/svg"
+>
+  <defs>
+    <linearGradient
+      id="cyanGradient"
+      x1="38"
+      y1="30"
+      x2="218"
+      y2="226"
+      gradientUnits="userSpaceOnUse"
+    >
+      <stop offset="0%" stop-color="#B8F5FF" />
+      <stop offset="35%" stop-color="#4CD7F6" />
+      <stop offset="70%" stop-color="#06B6D4" />
+      <stop offset="100%" stop-color="#0284A8" />
+    </linearGradient>
+
+    <filter
+      id="cyanGlow"
+      x="-50%"
+      y="-50%"
+      width="200%"
+      height="200%"
+    >
+      <feGaussianBlur
+        stdDeviation="8"
+        result="blur"
+      />
+
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Brilho externo -->
+  <path
+    d="M48 218V38H82L174 162V38H208V218H174L82 94V218H48Z"
+    stroke="#06B6D4"
+    stroke-width="12"
+    stroke-linejoin="round"
+    opacity="0.35"
+    filter="url(#cyanGlow)"
+  />
+
+  <!-- Letra N -->
+  <path
+    d="M48 218V38H82L174 162V38H208V218H174L82 94V218H48Z"
+    fill="url(#cyanGradient)"
+    stroke="#B8F5FF"
+    stroke-width="3"
+    stroke-linejoin="round"
+  />
+
+  <!-- Reflexo interno -->
+  <path
+    d="M61 202V55H75L181 193V55"
+    stroke="white"
+    stroke-width="3"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    opacity="0.45"
+  />
+</svg>
