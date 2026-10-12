@@ -1,9 +1,5 @@
-import { AppLayout } from "./layout/AppLayout";
+import Login from "./pages/Login";
 
 export function App() {
-  return (
-    <AppLayout activePage="user">
-      <div></div>
-    </AppLayout>
-  );
+  return <Login />;
 }
