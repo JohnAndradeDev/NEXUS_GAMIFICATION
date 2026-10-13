@@ -1,5 +1,5 @@
-import Login from "./pages/Login";
+import { Routes } from "./routes";
 
 export function App() {
-  return <Login />;
+  return <Routes />;
 }
