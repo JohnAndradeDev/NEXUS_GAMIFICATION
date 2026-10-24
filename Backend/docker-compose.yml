@@ -1,4 +1,4 @@
-vservices:
+services:
   nexus-gamification-pg:
     image: bitnami/postgresql
     ports:
