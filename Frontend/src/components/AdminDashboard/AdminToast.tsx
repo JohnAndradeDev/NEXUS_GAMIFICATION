@@ -7,7 +7,7 @@ export function AdminToast({ message, onClose }: AdminToastProps) {
   if (!message) return null;
 
   return (
-    <div className="fixed bottom-6 right-4 z-[80] flex max-w-sm items-center gap-space-sm rounded-xl border border-outline-variant/30 bg-surface-container-highest px-space-md py-space-sm shadow-2xl sm:right-8 sm:max-w-md">
+    <div className="fixed bottom-6 right-4 z-80 flex max-w-sm items-center gap-space-sm rounded-xl border border-outline-variant/30 bg-surface-container-highest px-space-md py-space-sm shadow-2xl sm:right-8 sm:max-w-md">
       <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-tertiary-container text-on-tertiary-container">
         <span className="material-symbols-outlined text-lg">verified</span>
       </div>

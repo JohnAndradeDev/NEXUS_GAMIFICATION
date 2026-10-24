@@ -20,12 +20,6 @@ export function AdminHeader({ onNewUser }: AdminHeaderProps) {
               Administrador Geral
             </span>
           </span>
-
-          <span className="hidden h-1.5 w-1.5 rounded-full bg-outline-variant sm:inline-block" />
-
-          <span className="hidden font-body-sm text-body-sm text-outline sm:inline-block">
-            Tenant ID: SQ-ENTERPRISE-BRAZIL
-          </span>
         </div>
 
         <div className="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:gap-space-sm">

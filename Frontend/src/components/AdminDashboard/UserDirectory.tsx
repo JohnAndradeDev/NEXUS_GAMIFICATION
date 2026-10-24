@@ -1,140 +1,121 @@
-import { useMemo, useState } from "react";
+import { useEffect, useState } from "react";
+import type { Role } from "../../contexts/AuthContext";
+import {
+  SECTORS,
+  getErrorMessages,
+  listUsers,
+  type ApiUser,
+  type Paginated,
+  type UserStatus,
+} from "../../lib/users";
+import { UserCard } from "./UserCard";
 import { UserTableRow } from "./UserTableRow";
 
 interface UserDirectoryProps {
-  onStatusChange: (userName: string, action: "Desativar" | "Reativar") => void;
-  onAction: (message: string) => void;
+  refreshKey: number;
+  onStatusChange: (user: ApiUser, action: "Desativar" | "Reativar") => void;
+  onEdit: (user: ApiUser) => void;
+  onPoints: (user: ApiUser) => void;
+}
+
+type Sort = "xp-desc" | "xp-asc" | "name-asc";
+
+const PER_PAGE = 20;
+
+const selectClass =
+  "rounded-lg border border-outline-variant/30 bg-surface-container-lowest px-2.5 py-2 font-label-sm text-label-sm text-on-surface outline-none";
+
+function pageWindow(current: number, total: number) {
+  const start = Math.max(1, Math.min(current - 2, total - 4));
+  const end = Math.min(total, start + 4);
+  return Array.from({ length: end - start + 1 }, (_, index) => start + index);
 }
 
 export function UserDirectory({
+  refreshKey,
   onStatusChange,
-  onAction,
+  onEdit,
+  onPoints,
 }: UserDirectoryProps) {
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [sector, setSector] = useState("");
-  const [profile, setProfile] = useState("");
-  const [status, setStatus] = useState("");
-  const [sort, setSort] = useState("xp-desc");
+  const [role, setRole] = useState<Role | "">("");
+  const [status, setStatus] = useState<UserStatus | "">("");
+  const [sort, setSort] = useState<Sort>("xp-desc");
+  const [page, setPage] = useState(1);
 
-  const users = [
-    {
-      name: "Carlos Drummond",
-      initials: "CD",
-      email: "carlos.drummond@empresa.com",
-      role: "Tech Lead",
-      description: "Líder de Arquitetura",
-      sector: "Engenharia",
-      squad: "CyberTitans",
-      profile: "Admin",
-      xp: 12850,
-      lastAccess: "Há 12 min",
-      status: "Ativo",
-    },
-    {
-      name: "Mariana Albuquerque",
-      initials: "MA",
-      email: "mariana.albuquerque@empresa.com",
-      role: "Product Manager",
-      description: "Lead Product Manager",
-      sector: "Produto",
-      squad: "DevCommanders",
-      profile: "Gestor",
-      xp: 9420,
-      lastAccess: "Hoje, 09:14",
-      status: "Ativo",
-    },
-    {
-      name: "Rafael Fontana",
-      initials: "RF",
-      email: "rafael.fontana@empresa.com",
-      role: "Desenvolvedor",
-      description: "Senior Frontend Dev",
-      sector: "Engenharia",
-      squad: "CyberTitans",
-      profile: "Usuário Comum",
-      xp: 8200,
-      lastAccess: "Há 45 min",
-      status: "Ativo",
-    },
-    {
-      name: "Beatriz Santos",
-      initials: "BS",
-      email: "beatriz.santos@empresa.com",
-      role: "Designer",
-      description: "Design System Specialist",
-      sector: "Design",
-      squad: "PixelForge",
-      profile: "Usuário Comum",
-      xp: 6150,
-      lastAccess: "Ontem, 17:40",
-      status: "Ativo",
-    },
-    {
-      name: "Diego Nogueira",
-      initials: "DN",
-      email: "diego.nogueira@empresa.com",
-      role: "QA",
-      description: "DevOps Engineer",
-      sector: "Infraestrutura",
-      squad: "CloudWarriors",
-      profile: "Usuário Comum",
-      xp: 4890,
-      lastAccess: "Há 2 dias",
-      status: "Ativo",
-    },
-    {
-      name: "Larissa Queiroz",
-      initials: "LQ",
-      email: "larissa.queiroz@empresa.com",
-      role: "QA",
-      description: "Ex-Data Analyst",
-      sector: "Dados",
-      squad: "DataKnights",
-      profile: "Usuário Comum",
-      xp: 1200,
-      lastAccess: "Há 4 dias",
-      status: "Desativado",
-    },
-  ];
+  const [data, setData] = useState<Paginated<ApiUser> | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
 
-  const filteredUsers = useMemo(() => {
-    const query = search.trim().toLowerCase();
+  // espera o usuário parar de digitar antes de consultar a API
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setDebouncedSearch(search.trim());
+      setPage(1);
+    }, 300);
+    return () => window.clearTimeout(timer);
+  }, [search]);
 
-    const result = users.filter((user) => {
-      const searchableText = [
-        user.name,
-        user.email,
-        user.role,
-        user.description,
-        user.squad,
-      ]
-        .join(" ")
-        .toLowerCase();
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    setError(null);
 
-      const matchesSearch =
-        query.length === 0 || searchableText.includes(query);
+    listUsers({
+      page,
+      perPage: PER_PAGE,
+      search: debouncedSearch,
+      sector,
+      role,
+      status,
+      sort,
+    })
+      .then((result) => {
+        if (!cancelled) setData(result);
+      })
+      .catch((err) => {
+        if (!cancelled) setError(getErrorMessages(err).join(" "));
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
 
-      const matchesSector = !sector || user.sector === sector;
-      const matchesProfile = !profile || user.profile === profile;
-      const matchesStatus = !status || user.status === status;
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    page,
+    debouncedSearch,
+    sector,
+    role,
+    status,
+    sort,
+    refreshKey,
+    reloadKey,
+  ]);
 
-      return matchesSearch && matchesSector && matchesProfile && matchesStatus;
-    });
+  // se a página atual deixou de existir (ex.: desativou o último item com filtro), volta uma
+  useEffect(() => {
+    if (data && data.meta.totalPages > 0 && page > data.meta.totalPages) {
+      setPage(data.meta.totalPages);
+    }
+  }, [data, page]);
 
-    return result.sort((first, second) => {
-      if (sort === "xp-desc") return second.xp - first.xp;
-      if (sort === "xp-asc") return first.xp - second.xp;
-      if (sort === "nome-asc") {
-        return first.name.localeCompare(second.name);
-      }
+  const users = data?.items ?? [];
+  const meta = data?.meta;
+  const totalPages = meta?.totalPages ?? 0;
 
-      return 0;
-    });
-  }, [search, sector, profile, status, sort]);
+  function changeFilter<T>(setter: (value: T) => void, value: T) {
+    setter(value);
+    setPage(1);
+  }
 
   return (
     <section className="overflow-hidden rounded-xl border border-outline-variant/30 bg-surface-container shadow-xl">
-      <div className="flex flex-col gap-space-md border-b border-outline-variant/20 bg-surface-container-low/70 p-4 sm:p-space-lg xl:flex-row xl:items-center xl:justify-between">
+      <div className="flex flex-col gap-space-md border-b border-outline-variant/20 bg-surface-container-low/70 p-4 sm:p-space-lg">
         <div>
           <h3 className="font-headline-md text-lg text-on-surface sm:text-headline-md">
             Diretório de Usuários Corporativos
@@ -145,8 +126,8 @@ export function UserDirectory({
           </p>
         </div>
 
-        <div className="flex w-full flex-col gap-2 sm:flex-row sm:flex-wrap xl:w-auto">
-          <div className="relative min-w-[200px] flex-1">
+        <div className="flex w-full flex-col gap-2 sm:flex-row sm:flex-wrap">
+          <div className="relative min-w-220px flex-1">
             <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-base text-outline">
               search
             </span>
@@ -154,88 +135,148 @@ export function UserDirectory({
             <input
               value={search}
               onChange={(event) => setSearch(event.target.value)}
-              placeholder="Buscar por nome ou e-mail..."
+              placeholder="Buscar por nome, e-mail ou cargo..."
               className="w-full rounded-lg border border-outline-variant/30 bg-surface-container-lowest py-2 pl-9 pr-3 font-body-sm text-body-sm text-on-surface outline-none focus:ring-1 focus:ring-primary"
             />
           </div>
 
           <select
             value={sector}
-            onChange={(event) => setSector(event.target.value)}
-            className="rounded-lg border border-outline-variant/30 bg-surface-container-lowest px-2.5 py-2 font-label-sm text-label-sm text-on-surface outline-none"
+            onChange={(event) => changeFilter(setSector, event.target.value)}
+            className={selectClass}
           >
             <option value="">Setores (Todos)</option>
-            <option value="Engenharia">Engenharia</option>
-            <option value="Produto">Produto</option>
-            <option value="Design">Design</option>
-            <option value="Dados">Dados</option>
-            <option value="Infraestrutura">Infraestrutura</option>
+            {SECTORS.map((item) => (
+              <option key={item} value={item}>
+                {item}
+              </option>
+            ))}
           </select>
 
           <select
-            value={profile}
-            onChange={(event) => setProfile(event.target.value)}
-            className="rounded-lg border border-outline-variant/30 bg-surface-container-lowest px-2.5 py-2 font-label-sm text-label-sm text-on-surface outline-none"
+            value={role}
+            onChange={(event) =>
+              changeFilter(setRole, event.target.value as Role | "")
+            }
+            className={selectClass}
           >
             <option value="">Perfis (Todos)</option>
-            <option value="Admin">Admin</option>
-            <option value="Gestor">Gestor</option>
-            <option value="Usuário Comum">Usuário Comum</option>
+            <option value="ADMIN">Admin</option>
+            <option value="GESTOR">Gestor</option>
+            <option value="USER">Usuário Comum</option>
           </select>
 
           <select
             value={status}
-            onChange={(event) => setStatus(event.target.value)}
-            className="rounded-lg border border-outline-variant/30 bg-surface-container-lowest px-2.5 py-2 font-label-sm text-label-sm text-on-surface outline-none"
+            onChange={(event) =>
+              changeFilter(setStatus, event.target.value as UserStatus | "")
+            }
+            className={selectClass}
           >
             <option value="">Status (Todos)</option>
-            <option value="Ativo">Ativo</option>
-            <option value="Desativado">Desativado</option>
+            <option value="ACTIVE">Ativo</option>
+            <option value="INACTIVE">Desativado</option>
           </select>
 
           <select
             value={sort}
-            onChange={(event) => setSort(event.target.value)}
+            onChange={(event) =>
+              changeFilter(setSort, event.target.value as Sort)
+            }
             className="rounded-lg border border-outline-variant/30 bg-surface-container-lowest px-2.5 py-2 font-label-sm text-label-sm text-primary outline-none"
           >
             <option value="xp-desc">Maior XP</option>
             <option value="xp-asc">Menor XP</option>
-            <option value="nome-asc">Nome: A-Z</option>
+            <option value="name-asc">Nome: A-Z</option>
           </select>
         </div>
       </div>
 
-      <div className="w-full overflow-x-auto">
-        <table className="min-w-[1000px] w-full border-collapse text-left">
+      <div className="hidden w-full overflow-x-auto 2xl:block">
+        <table className="w-full table-fixed border-collapse text-left">
+          <colgroup>
+            <col className="w-[25%]" />
+            <col className="w-[15%]" />
+            <col className="w-[11%]" />
+            <col className="w-[14%]" />
+            <col className="w-[9%]" />
+            <col className="w-[8%]" />
+            <col className="w-[9%]" />
+            <col className="w-[9%]" />
+          </colgroup>
+
           <thead>
             <tr className="bg-surface-container-lowest/60 font-label-sm uppercase tracking-wider text-outline">
-              <th className="px-space-md py-space-sm">Colaborador</th>
-              <th className="px-space-md py-space-sm">E-mail</th>
-              <th className="px-space-md py-space-sm">Cargo</th>
-              <th className="px-space-md py-space-sm">Setor</th>
-              <th className="px-space-md py-space-sm">Squad</th>
-              <th className="px-space-md py-space-sm">Perfil</th>
-              <th className="px-space-md py-space-sm">Status</th>
-              <th className="px-space-md py-space-sm">XP</th>
-              <th className="px-space-md py-space-sm">Último acesso</th>
-              <th className="px-space-md py-space-sm text-right">Ações</th>
+              <th className="px-3 py-space-sm text-[11px]">Colaborador</th>
+              <th className="px-3 py-space-sm text-[11px]">Cargo / Setor</th>
+              <th className="px-3 py-space-sm text-[11px]">Squad</th>
+              <th className="px-3 py-space-sm text-[11px]">Perfil</th>
+              <th className="px-3 py-space-sm text-[11px]">Status</th>
+              <th className="px-3 py-space-sm text-[11px]">XP</th>
+              <th className="px-3 py-space-sm text-[11px]">Último acesso</th>
+              <th className="px-3 py-space-sm text-right text-[11px]">Ações</th>
             </tr>
           </thead>
 
-          <tbody className="divide-y divide-outline-variant/10">
-            {filteredUsers.map((user) => (
+          <tbody
+            className={[
+              "divide-y divide-outline-variant/10 transition-opacity",
+              loading && users.length > 0 ? "opacity-50" : "",
+            ].join(" ")}
+          >
+            {users.map((user) => (
               <UserTableRow
-                key={user.email}
+                key={user.id}
                 user={user}
                 onStatusChange={onStatusChange}
-                onAction={onAction}
+                onEdit={onEdit}
+                onPoints={onPoints}
               />
             ))}
           </tbody>
         </table>
       </div>
 
-      {filteredUsers.length === 0 && (
+      <div
+        className={[
+          "grid grid-cols-1 gap-3 p-4 transition-opacity sm:grid-cols-2 xl:grid-cols-3 2xl:hidden",
+          loading && users.length > 0 ? "opacity-50" : "",
+        ].join(" ")}
+      >
+        {users.map((user) => (
+          <UserCard
+            key={user.id}
+            user={user}
+            onStatusChange={onStatusChange}
+            onEdit={onEdit}
+            onPoints={onPoints}
+          />
+        ))}
+      </div>
+
+      {loading && users.length === 0 && (
+        <div className="p-12 text-center font-body-sm text-body-sm text-outline">
+          Carregando usuários...
+        </div>
+      )}
+
+      {error && (
+        <div className="flex flex-col items-center justify-center gap-2 p-12 text-center">
+          <p role="alert" className="font-body-md text-body-md text-error">
+            {error}
+          </p>
+
+          <button
+            type="button"
+            onClick={() => setReloadKey((key) => key + 1)}
+            className="rounded-lg bg-surface-container-high px-space-md py-space-xs font-label-md text-label-md text-on-surface hover:bg-surface-variant"
+          >
+            Tentar novamente
+          </button>
+        </div>
+      )}
+
+      {!loading && !error && users.length === 0 && (
         <div className="flex flex-col items-center justify-center p-12 text-center">
           <span className="material-symbols-outlined mb-2 text-4xl text-outline">
             person_search
@@ -253,42 +294,53 @@ export function UserDirectory({
 
       <div className="flex flex-col items-center justify-between gap-2 border-t border-outline-variant/20 bg-surface-container-low/50 p-space-md text-center font-body-sm text-body-sm text-outline sm:flex-row sm:text-left">
         <div>
-          Exibindo {filteredUsers.length} de 148 colaboradores corporativos
-          <span className="mx-1 hidden sm:inline">•</span>
-          <span className="text-tertiary">Sincronização LDAP / SSO ativa</span>
+          Exibindo {users.length} de {meta?.total ?? 0} colaboradores
+          corporativos
         </div>
 
-        <div className="flex items-center gap-1">
-          <button className="flex h-8 w-8 items-center justify-center rounded bg-surface-container text-outline">
-            <span className="material-symbols-outlined text-sm">
-              chevron_left
-            </span>
-          </button>
+        {totalPages > 1 && (
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              aria-label="Página anterior"
+              disabled={page <= 1}
+              onClick={() => setPage((current) => current - 1)}
+              className="flex h-8 w-8 items-center justify-center rounded bg-surface-container text-outline disabled:opacity-40"
+            >
+              <span className="material-symbols-outlined text-sm">
+                chevron_left
+              </span>
+            </button>
 
-          <button className="flex h-8 w-8 items-center justify-center rounded bg-primary-container font-label-md text-label-md text-on-primary-container">
-            1
-          </button>
+            {pageWindow(page, totalPages).map((number) => (
+              <button
+                key={number}
+                type="button"
+                onClick={() => setPage(number)}
+                className={[
+                  "flex h-8 w-8 items-center justify-center rounded font-label-md text-label-md",
+                  number === page
+                    ? "bg-primary-container text-on-primary-container"
+                    : "bg-surface-container text-on-surface",
+                ].join(" ")}
+              >
+                {number}
+              </button>
+            ))}
 
-          <button className="flex h-8 w-8 items-center justify-center rounded bg-surface-container font-label-md text-label-md text-on-surface">
-            2
-          </button>
-
-          <button className="flex h-8 w-8 items-center justify-center rounded bg-surface-container font-label-md text-label-md text-on-surface">
-            3
-          </button>
-
-          <span className="px-1">...</span>
-
-          <button className="flex h-8 w-8 items-center justify-center rounded bg-surface-container font-label-md text-label-md text-on-surface">
-            25
-          </button>
-
-          <button className="flex h-8 w-8 items-center justify-center rounded bg-surface-container text-outline">
-            <span className="material-symbols-outlined text-sm">
-              chevron_right
-            </span>
-          </button>
-        </div>
+            <button
+              type="button"
+              aria-label="Próxima página"
+              disabled={page >= totalPages}
+              onClick={() => setPage((current) => current + 1)}
+              className="flex h-8 w-8 items-center justify-center rounded bg-surface-container text-outline disabled:opacity-40"
+            >
+              <span className="material-symbols-outlined text-sm">
+                chevron_right
+              </span>
+            </button>
+          </div>
+        )}
       </div>
     </section>
   );

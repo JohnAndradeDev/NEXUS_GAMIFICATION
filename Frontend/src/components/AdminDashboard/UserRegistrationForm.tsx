@@ -1,37 +1,98 @@
 import { useState } from "react";
+import type { Role } from "../../contexts/AuthContext";
+import {
+  JOB_TITLES,
+  ROLE_LABEL,
+  SECTORS,
+  createUser,
+  getErrorMessages,
+  type Squad,
+  type UserStatus,
+} from "../../lib/users";
 
 interface UserRegistrationFormProps {
+  squads: Squad[];
   onSuccess: () => void;
 }
 
-export function UserRegistrationForm({ onSuccess }: UserRegistrationFormProps) {
-  const [password, setPassword] = useState("Squad#2025Init");
-  const [role, setRole] = useState("Desenvolvedor");
-  const [squad, setSquad] = useState("CyberTitans");
+interface FormState {
+  name: string;
+  email: string;
+  password: string;
+  jobTitle: string;
+  role: Role;
+  squadId: string;
+  sector: string;
+  status: UserStatus;
+}
 
-  function generatePassword() {
-    const chars =
-      "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#$%";
+const EMPTY_FORM: FormState = {
+  name: "",
+  email: "",
+  password: "",
+  jobTitle: JOB_TITLES[0],
+  role: "USER",
+  squadId: "",
+  sector: SECTORS[0],
+  status: "ACTIVE",
+};
 
-    let generatedPassword = "SQ#";
+const inputClass =
+  "rounded-lg border border-outline-variant/30 bg-surface-container-lowest px-space-md py-2.5 font-body-md text-body-md text-on-surface outline-none focus:ring-1 focus:ring-primary";
 
-    for (let index = 0; index < 8; index += 1) {
-      generatedPassword += chars.charAt(
-        Math.floor(Math.random() * chars.length),
-      );
-    }
+// senha aleatória com letras e números (o backend exige os dois)
+function generatePassword() {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#$%";
+  const values = crypto.getRandomValues(new Uint32Array(11));
+  const body = Array.from(values.slice(0, 10), (value) =>
+    chars.charAt(value % chars.length),
+  ).join("");
+  const digit = (values[10] ?? 0) % 10;
 
-    setPassword(generatedPassword);
+  return `SQ${body}${digit}`;
+}
+
+export function UserRegistrationForm({
+  squads,
+  onSuccess,
+}: UserRegistrationFormProps) {
+  const [form, setForm] = useState<FormState>(EMPTY_FORM);
+  const [errors, setErrors] = useState<string[]>([]);
+  const [submitting, setSubmitting] = useState(false);
+
+  function setField<K extends keyof FormState>(key: K, value: FormState[K]) {
+    setForm((current) => ({ ...current, [key]: value }));
   }
 
-  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  function resetForm() {
+    setForm(EMPTY_FORM);
+    setErrors([]);
+  }
 
-    onSuccess();
-    event.currentTarget.reset();
-    setPassword("Squad#2025Init");
-    setRole("Desenvolvedor");
-    setSquad("CyberTitans");
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setErrors([]);
+    setSubmitting(true);
+
+    try {
+      await createUser({
+        name: form.name.trim(),
+        email: form.email.trim().toLowerCase(),
+        password: form.password,
+        role: form.role,
+        status: form.status,
+        sector: form.sector,
+        jobTitle: form.jobTitle,
+        squadId: form.squadId ? Number(form.squadId) : null,
+      });
+
+      resetForm();
+      onSuccess();
+    } catch (err) {
+      setErrors(getErrorMessages(err));
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -72,8 +133,11 @@ export function UserRegistrationForm({ onSuccess }: UserRegistrationFormProps) {
             <input
               id="input-nome"
               required
+              minLength={2}
+              value={form.name}
+              onChange={(event) => setField("name", event.target.value)}
               placeholder="Ex: Lucas Mendes Oliveira"
-              className="rounded-lg border border-outline-variant/30 bg-surface-container-lowest px-space-md py-2.5 font-body-md text-body-md text-on-surface outline-none focus:ring-1 focus:ring-primary"
+              className={inputClass}
             />
           </div>
 
@@ -89,8 +153,10 @@ export function UserRegistrationForm({ onSuccess }: UserRegistrationFormProps) {
               id="input-email"
               required
               type="email"
+              value={form.email}
+              onChange={(event) => setField("email", event.target.value)}
               placeholder="nome.sobrenome@empresa.com"
-              className="rounded-lg border border-outline-variant/30 bg-surface-container-lowest px-space-md py-2.5 font-body-md text-body-md text-on-surface outline-none focus:ring-1 focus:ring-primary"
+              className={inputClass}
             />
           </div>
 
@@ -105,7 +171,7 @@ export function UserRegistrationForm({ onSuccess }: UserRegistrationFormProps) {
 
               <button
                 type="button"
-                onClick={generatePassword}
+                onClick={() => setField("password", generatePassword())}
                 className="font-label-sm text-label-sm text-primary hover:underline"
               >
                 Gerar Segura
@@ -115,10 +181,12 @@ export function UserRegistrationForm({ onSuccess }: UserRegistrationFormProps) {
             <input
               id="input-senha"
               required
+              minLength={8}
               type="text"
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              className="rounded-lg border border-outline-variant/30 bg-surface-container-lowest px-space-md py-2.5 font-body-md text-body-md text-on-surface outline-none focus:ring-1 focus:ring-primary"
+              value={form.password}
+              onChange={(event) => setField("password", event.target.value)}
+              placeholder="Mínimo 8 caracteres, com letras e números"
+              className={inputClass}
             />
           </div>
 
@@ -132,17 +200,37 @@ export function UserRegistrationForm({ onSuccess }: UserRegistrationFormProps) {
 
             <select
               id="select-cargo"
-              value={role}
-              onChange={(event) => setRole(event.target.value)}
-              className="rounded-lg border border-outline-variant/30 bg-surface-container-lowest px-space-md py-2.5 font-body-md text-body-md text-on-surface outline-none focus:ring-1 focus:ring-primary"
+              value={form.jobTitle}
+              onChange={(event) => setField("jobTitle", event.target.value)}
+              className={inputClass}
             >
-              <option value="Desenvolvedor">Desenvolvedor(a)</option>
-              <option value="QA">Analista de QA</option>
-              <option value="Tech Lead">Tech Lead</option>
-              <option value="Product Manager">Product Manager</option>
-              <option value="Designer">UI/UX Designer</option>
-              <option value="Gestor de Squad">Gestor de Squad</option>
-              <option value="Administrador">Administrador Geral</option>
+              {JOB_TITLES.map((title) => (
+                <option key={title} value={title}>
+                  {title}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <label
+              htmlFor="select-perfil"
+              className="font-label-md text-label-md text-on-surface"
+            >
+              Perfil de Acesso <span className="text-error">*</span>
+            </label>
+
+            <select
+              id="select-perfil"
+              value={form.role}
+              onChange={(event) => setField("role", event.target.value as Role)}
+              className={inputClass}
+            >
+              {(Object.keys(ROLE_LABEL) as Role[]).map((role) => (
+                <option key={role} value={role}>
+                  {ROLE_LABEL[role]}
+                </option>
+              ))}
             </select>
           </div>
 
@@ -156,16 +244,16 @@ export function UserRegistrationForm({ onSuccess }: UserRegistrationFormProps) {
 
             <select
               id="select-squad"
-              value={squad}
-              onChange={(event) => setSquad(event.target.value)}
-              className="rounded-lg border border-outline-variant/30 bg-surface-container-lowest px-space-md py-2.5 font-body-md text-body-md text-on-surface outline-none focus:ring-1 focus:ring-primary"
+              value={form.squadId}
+              onChange={(event) => setField("squadId", event.target.value)}
+              className={inputClass}
             >
-              <option value="CyberTitans">CyberTitans</option>
-              <option value="DevCommanders">DevCommanders</option>
-              <option value="CloudWarriors">CloudWarriors</option>
-              <option value="PixelForge">PixelForge</option>
-              <option value="DataKnights">DataKnights</option>
-              <option value="Nenhum">Nenhum</option>
+              <option value="">Nenhum</option>
+              {squads.map((squad) => (
+                <option key={squad.id} value={squad.id}>
+                  {squad.name}
+                </option>
+              ))}
             </select>
           </div>
 
@@ -179,17 +267,19 @@ export function UserRegistrationForm({ onSuccess }: UserRegistrationFormProps) {
 
             <select
               id="select-setor"
-              className="rounded-lg border border-outline-variant/30 bg-surface-container-lowest px-space-md py-2.5 font-body-md text-body-md text-on-surface outline-none focus:ring-1 focus:ring-primary"
+              value={form.sector}
+              onChange={(event) => setField("sector", event.target.value)}
+              className={inputClass}
             >
-              <option>Engenharia</option>
-              <option>Produto</option>
-              <option>Design</option>
-              <option>Dados</option>
-              <option>Infraestrutura</option>
+              {SECTORS.map((sector) => (
+                <option key={sector} value={sector}>
+                  {sector}
+                </option>
+              ))}
             </select>
           </div>
 
-          <div className="flex flex-col gap-1.5 md:col-span-2 lg:col-span-3">
+          <div className="flex flex-col gap-1.5 md:col-span-1 lg:col-span-1">
             <label
               htmlFor="select-status"
               className="font-label-md text-label-md text-on-surface"
@@ -199,39 +289,57 @@ export function UserRegistrationForm({ onSuccess }: UserRegistrationFormProps) {
 
             <select
               id="select-status"
-              className="rounded-lg border border-outline-variant/30 bg-surface-container-lowest px-space-md py-2.5 font-body-md text-body-md text-on-surface outline-none focus:ring-1 focus:ring-primary"
+              value={form.status}
+              onChange={(event) =>
+                setField("status", event.target.value as UserStatus)
+              }
+              className={inputClass}
             >
-              <option>Ativo</option>
-              <option>Em Onboarding</option>
+              <option value="ACTIVE">Ativo</option>
+              <option value="INACTIVE">Desativado</option>
             </select>
           </div>
         </div>
 
+        {errors.length > 0 && (
+          <ul
+            role="alert"
+            className="space-y-1 rounded-lg bg-error-container/30 px-space-md py-space-sm font-body-sm text-body-sm text-error"
+          >
+            {errors.map((message) => (
+              <li key={message}>{message}</li>
+            ))}
+          </ul>
+        )}
+
         <div className="flex flex-col gap-4 border-t border-outline-variant/20 pt-space-sm sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-2 text-outline">
             <span className="material-symbols-outlined shrink-0 text-base text-tertiary">
-              mark_email_read
+              key
             </span>
 
             <span className="font-body-sm text-body-sm">
-              E-mail de ativação será enviado após a criação.
+              Repasse a senha provisória ao colaborador após a criação.
             </span>
           </div>
 
           <div className="flex flex-col-reverse gap-2 sm:flex-row">
             <button
-              type="reset"
-              className="rounded-lg bg-surface-container-low px-space-md py-2.5 font-label-md text-label-md text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface"
+              type="button"
+              onClick={resetForm}
+              disabled={submitting}
+              className="rounded-lg bg-surface-container-low px-space-md py-2.5 font-label-md text-label-md text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface disabled:opacity-60"
             >
               Limpar Formulário
             </button>
 
             <button
               type="submit"
-              className="flex items-center justify-center gap-2 rounded-lg bg-primary-container px-space-lg py-2.5 font-label-md text-label-md text-on-primary-container shadow-[0_0_20px_rgba(6,182,212,0.4)] transition-all hover:brightness-110"
+              disabled={submitting}
+              className="flex items-center justify-center gap-2 rounded-lg bg-primary-container px-space-lg py-2.5 font-label-md text-label-md text-on-primary-container shadow-[0_0_20px_rgba(6,182,212,0.4)] transition-all hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-70"
             >
               <span className="material-symbols-outlined text-lg">bolt</span>
-              Criar Usuário
+              {submitting ? "Criando..." : "Criar Usuário"}
             </button>
           </div>
         </div>
