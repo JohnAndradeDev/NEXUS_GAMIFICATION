@@ -11,12 +11,11 @@ export function ErrorBanner({ onDismiss }: ErrorBannerProps) {
 
       <div className="flex-1">
         <p className="text-xs font-medium text-error sm:text-label-md">
-          Falha de Autenticação
+          Não foi possível entrar
         </p>
-
         <p className="text-xs text-on-surface-variant sm:text-body-sm">
-          Chave de acesso corporativa inválida para o domínio indicado.
-        </p>
+          E-mail ou senha incorretos. Confira os dados e tente novamente.
+        </p>{" "}
       </div>
 
       <button

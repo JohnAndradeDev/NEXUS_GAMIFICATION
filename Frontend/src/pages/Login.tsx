@@ -1,54 +1,14 @@
 import { useState } from "react";
-
 import { BrandLogo } from "../components/Login/BrandLogo";
 import { ErrorBanner } from "../components/Login/ErrorBanner";
 import { LoginForm } from "../components/Login/LoginForm";
 
-export type Role = "user" | "manager" | "admin";
-
-export interface Profile {
-  name: string;
-  email: string;
-  squad: string;
-  rank: string;
-  badge: string;
-  initial: string;
-}
-
-export const profiles: Record<Role, Profile> = {
-  user: {
-    name: "João Silveira",
-    email: "joao.silveira@empresa.com",
-    squad: "CyberTitans",
-    rank: "3º Lugar Geral",
-    badge: "Operador",
-    initial: "JS",
-  },
-  manager: {
-    name: "Camila Duarte",
-    email: "camila.duarte@empresa.com",
-    squad: "Apex Guild",
-    rank: "1º Lugar Squads",
-    badge: "Gestor",
-    initial: "CD",
-  },
-  admin: {
-    name: "Roberto Mendes",
-    email: "roberto.mendes@empresa.com",
-    squad: "Core Systems",
-    rank: "Tech Lead",
-    badge: "Admin",
-    initial: "RM",
-  },
-};
-
 export default function Login() {
-  const [role] = useState<Role>("user");
   const [showError, setShowError] = useState(false);
 
-  function handleToggleError() {
-    setShowError((currentValue) => !currentValue);
-  }
+  // function handleToggleError() {
+  //   setShowError((currentValue) => !currentValue);
+  // }
 
   function handleDismissError() {
     setShowError(false);
@@ -63,11 +23,16 @@ export default function Login() {
 
         <div className="relative flex w-full flex-col">
           <BrandLogo />
+
           {showError && <ErrorBanner onDismiss={handleDismissError} />}
 
-          <LoginForm role={role} showError={showError} />
+          <LoginForm
+            showError={showError}
+            onCredentialsError={() => setShowError(true)}
+            onClearError={() => setShowError(false)}
+          />
 
-          <div className="mt-space-md flex items-center justify-center pt-space-xs">
+          {/* <div className="mt-space-md flex items-center justify-center pt-space-xs">
             <button
               type="button"
               onClick={handleToggleError}
@@ -76,7 +41,7 @@ export default function Login() {
               <span className="text-[14px]">⚠</span>
               <span>Simular erro de credencial</span>
             </button>
-          </div>
+          </div> */}
 
           <footer className="mt-space-md flex flex-col items-center gap-1 border-t border-surface-variant/30 pt-space-md text-center sm:mt-space-lg">
             <p className="text-[11px] text-on-surface-variant/80 sm:text-body-sm">

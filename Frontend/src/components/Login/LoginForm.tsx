@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   AtSign,
   CheckCircle,
@@ -8,45 +8,65 @@ import {
   LoaderCircle,
   Zap,
 } from "lucide-react";
-
-import type { Role } from "../../pages/Login.tsx";
+import { useAuth, type User } from "../../contexts/AuthContext";
+import { ApiError } from "../../lib/api";
 
 interface LoginFormProps {
-  role: Role;
-  showError: boolean;
+  showError?: boolean;
+  onSuccess?: (user: User) => void;
+  onCredentialsError?: () => void;
+  onClearError?: () => void;
 }
 
 type SubmitState = "idle" | "loading" | "success";
 
-export function LoginForm({ role, showError }: LoginFormProps) {
+export function LoginForm({
+  showError = false,
+  onSuccess,
+  onCredentialsError,
+  onClearError,
+}: LoginFormProps) {
+  const { login } = useAuth();
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [rememberDevice, setRememberDevice] = useState(true);
   const [submitState, setSubmitState] = useState<SubmitState>("idle");
-
-  useEffect(() => {
-    setSubmitState("idle");
-  }, [role]);
+  const [error, setError] = useState<string | null>(null);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    console.log(email, password);
+    setError(null);
+    onClearError?.();
     setSubmitState("loading");
 
-    await new Promise((resolve) => {
-      setTimeout(resolve, 1200);
-    });
+    event.preventDefault();
+    setError(null);
+    setSubmitState("loading");
 
-    setSubmitState("success");
+    try {
+      const user = await login(email, password, rememberDevice);
+      setSubmitState("success");
+      onSuccess?.(user);
 
-    setTimeout(() => {
+      setTimeout(() => setSubmitState("idle"), 1800);
+    } catch (err) {
       setSubmitState("idle");
-    }, 1800);
+
+      if (err instanceof ApiError && err.status === 401) {
+        onCredentialsError?.();
+      } else if (err instanceof ApiError) {
+        setError(err.errors?.[0]?.message ?? err.message);
+      } else {
+        setError("Erro inesperado. Tente novamente.");
+      }
+    }
   }
 
   const isLoading = submitState === "loading";
   const isSuccess = submitState === "success";
+  const hasError = showError || error !== null;
 
   return (
     <form id="auth-form" onSubmit={handleSubmit} className="space-y-space-md">
@@ -70,13 +90,18 @@ export function LoginForm({ role, showError }: LoginFormProps) {
             id="corporate-id"
             name="email"
             type="email"
+            autoComplete="email"
             placeholder="nome.sobrenome@empresa.com"
             required
-            onChange={(e) => setEmail(e.target.value)}
+            value={email}
+            onChange={(e) => {
+              setEmail(e.target.value);
+              setError(null);
+            }}
             className={[
               "h-11 w-full rounded-lg bg-surface-container-highest/60 pl-10 pr-space-md text-sm text-on-surface",
               "placeholder:text-on-surface-variant/60 focus:bg-surface-container-highest focus:outline-none focus:ring-1",
-              showError ? "ring-error" : "focus:ring-primary",
+              hasError ? "ring-error" : "focus:ring-primary",
               "transition duration-200 sm:text-body-md",
             ].join(" ")}
           />
@@ -101,13 +126,20 @@ export function LoginForm({ role, showError }: LoginFormProps) {
             id="password-input"
             name="password"
             type={showPassword ? "text" : "password"}
+            autoComplete="current-password"
             placeholder="Insira sua credencial"
             required
-            onChange={(e) => setPassword(e.target.value)}
+            value={password}
+            onChange={(e) => {
+              setPassword(e.target.value);
+              setError(null);
+            }}
             className={[
-              "h-11 w-full rounded-lg bg-surface-container-highest/60 pl-10 pr-10 text-sm text-on-surface",
-              "placeholder:text-on-surface-variant/60 focus:bg-surface-container-highest focus:outline-none focus:ring-1",
-              showError ? "ring-error" : "focus:ring-primary",
+              "h-11 w-full rounded-lg bg-surface-container-highest/60 pl-10 pr-space-md text-sm text-on-surface",
+              "placeholder:text-on-surface-variant/60 focus:bg-surface-container-highest focus:outline-none",
+              hasError
+                ? "ring-1 ring-error"
+                : "focus:ring-1 focus:ring-primary",
               "transition duration-200 sm:text-body-md",
             ].join(" ")}
           />
@@ -136,12 +168,13 @@ export function LoginForm({ role, showError }: LoginFormProps) {
             Lembrar deste dispositivo
           </span>
         </label>
-
-        {/* <div className="flex items-center gap-1 text-[11px] text-tertiary sm:text-label-sm">
-          <LockKeyhole size={14} />
-          <span>2FA Pronto</span>
-        </div> */}
       </div>
+
+      {error && (
+        <p role="alert" className="text-xs text-error sm:text-body-sm">
+          {error}
+        </p>
+      )}
 
       <div className="pt-space-xs">
         <button
