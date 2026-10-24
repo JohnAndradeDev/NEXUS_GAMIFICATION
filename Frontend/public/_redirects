@@ -1,2 +1,2 @@
-/api/*  https://nexus-api-ghum.onrender.com/api/:splat  200
+/api/*  https://nexus-gamification-api.onrender.com/api/:splat  200
 /*      /index.html                                  200
