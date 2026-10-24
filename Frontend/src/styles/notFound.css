@@ -1,0 +1,145 @@
+/* src/styles/notFound.css */
+
+@keyframes floatHero {
+  0%,
+  100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-12px) rotate(1.5deg);
+  }
+}
+
+@keyframes pulseRing {
+  0% {
+    r: 55px;
+    opacity: 0.8;
+    stroke-width: 2px;
+  }
+  50% {
+    r: 75px;
+    opacity: 0.2;
+    stroke-width: 1px;
+  }
+  100% {
+    r: 55px;
+    opacity: 0.8;
+    stroke-width: 2px;
+  }
+}
+
+@keyframes portalSpin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes glitchText {
+  0%,
+  92%,
+  100% {
+    transform: translate(0, 0);
+    opacity: 1;
+  }
+  93% {
+    transform: translate(-3px, 1px);
+    opacity: 0.85;
+    filter: drop-shadow(-2px 0 #ef4444);
+  }
+  95% {
+    transform: translate(3px, -2px);
+    opacity: 0.9;
+    filter: drop-shadow(2px 0 #06b6d4);
+  }
+  97% {
+    transform: translate(-1px, 2px);
+  }
+}
+
+@keyframes radarSweep {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes blinkWarning {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.3;
+  }
+}
+
+@keyframes particleOrbit1 {
+  0% {
+    transform: rotate(0deg) translateX(95px) rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg) translateX(95px) rotate(-360deg);
+  }
+}
+
+@keyframes particleOrbit2 {
+  0% {
+    transform: rotate(180deg) translateX(120px) rotate(-180deg);
+  }
+  100% {
+    transform: rotate(-180deg) translateX(120px) rotate(180deg);
+  }
+}
+
+@keyframes healthDrop {
+  0%,
+  100% {
+    width: 34px;
+  }
+  50% {
+    width: 12px;
+  }
+}
+
+.hero-group {
+  animation: floatHero 4.5s ease-in-out infinite;
+  transform-origin: 300px 150px;
+}
+
+.pulse-ring {
+  animation: pulseRing 3s ease-in-out infinite;
+  transform-origin: 300px 150px;
+}
+
+.portal-core {
+  animation: portalSpin 18s linear infinite;
+  transform-origin: 300px 150px;
+}
+
+.glitch-code {
+  animation: glitchText 3.8s infinite;
+}
+
+.radar-line {
+  animation: radarSweep 4s linear infinite;
+  transform-origin: 300px 150px;
+}
+
+.warning-blink {
+  animation: blinkWarning 1.2s ease-in-out infinite;
+}
+
+.orbit-1 {
+  animation: particleOrbit1 7s linear infinite;
+  transform-origin: 300px 150px;
+}
+
+.orbit-2 {
+  animation: particleOrbit2 10s linear infinite;
+  transform-origin: 300px 150px;
+}
