@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { AppLayout } from "../layout/AppLayout";
+import { AppLayout } from "../layouts/AppLayout";
 import { XpToast } from "../components/UserDashboard/XpToast";
 import { DashboardHero } from "../components/UserDashboard/DashboardHero";
 import { QuickMetrics } from "../components/UserDashboard/QuickMetrics";
