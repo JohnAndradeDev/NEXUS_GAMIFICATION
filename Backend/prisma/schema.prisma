@@ -1,0 +1,271 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  USER
+  GESTOR
+  ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum TaskDifficulty {
+  FACIL
+  MEDIO
+  DIFICIL
+}
+
+enum TaskStatus {
+  PENDENTE
+  EM_ANDAMENTO
+  CONCLUIDA
+  ATRASADA
+  CANCELADA
+}
+
+enum AssignmentStatus {
+  PENDENTE
+  EM_ANDAMENTO
+  CONCLUIDA
+  ATRASADA
+}
+
+enum PointTransactionType {
+  TASK_COMPLETED
+  TASK_BONUS
+  ACHIEVEMENT_UNLOCKED
+  ADMIN_ADJUSTMENT
+  PENALTY
+}
+
+enum AchievementType {
+  TASK_COUNT
+  POINTS_TOTAL
+  STREAK
+  RANKING
+  TEAMWORK
+  CUSTOM
+}
+
+enum NotificationType {
+  TASK_ASSIGNED
+  TASK_UPDATED
+  TASK_REMOVED
+  TASK_CANCELED
+  TASK_COMPLETED
+  POINTS
+  ACHIEVEMENT
+  LEVEL_UP
+  SQUAD
+}
+
+model User {
+  id           Int    @id @default(autoincrement())
+  name         String
+  email        String @unique
+  passwordHash String @map("password_hash")
+
+  role      Role       @default(USER)
+  status    UserStatus @default(ACTIVE)
+  sector    String?
+  avatarUrl String?
+  jobTitle  String?
+
+  level       Int       @default(1)
+  experience  Int       @default(0)
+  lastLoginAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  squadId Int?
+  squad   Squad? @relation("SquadMembers", fields: [squadId], references: [id], onDelete: SetNull)
+
+  managedSquad Squad? @relation("SquadManager")
+
+  createdTasks Task[]           @relation("TaskCreator")
+  assignments  TaskAssignment[]
+
+  pointTransactions PointTransaction[]
+  achievements      UserAchievement[]
+  notifications     Notification[]
+
+  @@index([squadId])
+  @@index([role])
+  @@index([status])
+  @@index([sector])
+  @@map("users")
+}
+
+model Squad {
+  id          Int     @id @default(autoincrement())
+  name        String  @unique
+  description String?
+  avatarUrl   String?
+  color       String?
+
+  isActive Boolean @default(true)
+
+  managerId Int?  @unique
+  manager   User? @relation("SquadManager", fields: [managerId], references: [id], onDelete: SetNull)
+
+  members User[] @relation("SquadMembers")
+  tasks   Task[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([managerId])
+  @@index([isActive])
+  @@map("squads")
+}
+
+model Task {
+  id          Int     @id @default(autoincrement())
+  title       String
+  description String?
+
+  category String?
+  priority Int     @default(2)
+
+  difficulty TaskDifficulty
+  basePoints Int
+
+  status TaskStatus @default(PENDENTE)
+
+  startDate   DateTime?
+  dueDate     DateTime
+  completedAt DateTime?
+
+  squadId Int
+  squad   Squad @relation(fields: [squadId], references: [id], onDelete: Cascade)
+
+  createdById Int
+  createdBy   User @relation("TaskCreator", fields: [createdById], references: [id], onDelete: Restrict)
+
+  assignments       TaskAssignment[]
+  pointTransactions PointTransaction[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([squadId])
+  @@index([createdById])
+  @@index([status])
+  @@index([difficulty])
+  @@index([dueDate])
+  @@index([createdAt])
+  @@map("tasks")
+}
+
+model TaskAssignment {
+  id Int @id @default(autoincrement())
+
+  taskId Int
+  task   Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  userId Int
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  status   AssignmentStatus @default(PENDENTE)
+  progress Int              @default(0)
+
+  pointsAwarded Int @default(0)
+
+  assignedAt  DateTime  @default(now())
+  startedAt   DateTime?
+  completedAt DateTime?
+  updatedAt   DateTime  @updatedAt
+
+  @@unique([taskId, userId])
+  @@index([taskId])
+  @@index([userId])
+  @@index([status])
+  @@map("task_assignments")
+}
+
+model PointTransaction {
+  id          Int                  @id @default(autoincrement())
+  amount      Int
+  type        PointTransactionType
+  description String?
+
+  userId Int
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  taskId Int?
+  task   Task? @relation(fields: [taskId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([taskId])
+  @@index([type])
+  @@index([createdAt])
+  @@map("point_transactions")
+}
+
+model Achievement {
+  id          Int             @id @default(autoincrement())
+  code        String          @unique
+  name        String
+  description String
+  icon        String?
+  type        AchievementType
+  target      Int?
+  pointsBonus Int             @default(0)
+
+  isActive Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users UserAchievement[]
+
+  @@index([type])
+  @@index([isActive])
+  @@map("achievements")
+}
+
+model UserAchievement {
+  id Int @id @default(autoincrement())
+
+  userId Int
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  achievementId Int
+  achievement   Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)
+
+  unlockedAt DateTime @default(now())
+
+  @@unique([userId, achievementId])
+  @@index([userId])
+  @@index([achievementId])
+  @@map("user_achievements")
+}
+
+model Notification {
+  id        Int              @id @default(autoincrement())
+  type      NotificationType
+  title     String
+  message   String
+  link      String?
+  readAt    DateTime?
+  createdAt DateTime         @default(now())
+
+  userId Int
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, readAt])
+  @@index([userId, createdAt])
+  @@map("notifications")
+}
