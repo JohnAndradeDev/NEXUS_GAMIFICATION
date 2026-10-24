@@ -1,73 +1,58 @@
+import { Link } from "react-router";
+import { useAuth } from "../../contexts/AuthContext";
+import { useLogout } from "../../hooks/useLogout";
+import { getNavItems, type ActivePage } from "./navigation";
+
 interface MobileBottomNavProps {
-  activePage: "user" | "manager" | "squad" | "admin";
+  activePage: ActivePage;
 }
 
+const itemClass =
+  "flex min-h-12 max-w-28 flex-1 flex-col items-center justify-center rounded-lg py-1 transition-colors";
+
 export function MobileBottomNav({ activePage }: MobileBottomNavProps) {
+  const { user } = useAuth();
+  const logout = useLogout();
+
+  if (!user) return null;
+
+  const items = getNavItems(user.role);
+
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 flex items-center justify-around border-t border-surface-container-high bg-surface-container-lowest/95 px-1 py-2 shadow-[0_-4px_16px_rgba(0,0,0,0.4)] backdrop-blur-xl lg:hidden">
-      <a
-        href="#"
-        className={[
-          "flex flex-1 flex-col items-center justify-center py-1 transition-colors",
-          activePage === "user"
-            ? "font-semibold text-primary"
-            : "text-on-surface-variant hover:text-on-surface",
-        ].join(" ")}
-      >
-        <span className="material-symbols-outlined text-xl">dashboard</span>
-        <span className="mt-0.5 font-label-sm text-[10px]">Usuário</span>
-      </a>
+    <nav className="fixed bottom-0 left-0 right-0 z-40 flex items-center justify-around gap-1 border-t border-surface-container-high bg-surface-container-lowest/95 px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2 shadow-[0_-4px_16px_rgba(0,0,0,0.4)] backdrop-blur-xl lg:hidden">
+      {items.map((item) => {
+        const isActive = item.key === activePage;
 
-      <a
-        href="#"
-        className={[
-          "flex flex-1 flex-col items-center justify-center py-1 transition-colors",
-          activePage === "manager"
-            ? "font-semibold text-primary"
-            : "text-on-surface-variant hover:text-on-surface",
-        ].join(" ")}
-      >
-        <span className="material-symbols-outlined text-xl">
-          supervisor_account
-        </span>
-        <span className="mt-0.5 font-label-sm text-[10px]">Gestor</span>
-      </a>
+        return (
+          <Link
+            key={item.key}
+            to={item.to}
+            aria-current={isActive ? "page" : undefined}
+            className={[
+              itemClass,
+              isActive
+                ? "font-semibold text-primary"
+                : "text-on-surface-variant hover:text-on-surface",
+            ].join(" ")}
+          >
+            <span className="material-symbols-outlined text-xl">
+              {item.icon}
+            </span>
+            <span className="mt-0.5 font-label-sm text-[10px]">
+              {item.shortLabel}
+            </span>
+          </Link>
+        );
+      })}
 
-      <a
-        href="#"
-        className={[
-          "flex flex-1 flex-col items-center justify-center py-1 transition-colors",
-          activePage === "squad"
-            ? "font-semibold text-primary"
-            : "text-on-surface-variant hover:text-on-surface",
-        ].join(" ")}
-      >
-        <span className="material-symbols-outlined text-xl">shield_person</span>
-        <span className="mt-0.5 font-label-sm text-[10px]">Squad</span>
-      </a>
-
-      <a
-        href="#"
-        className={[
-          "flex flex-1 flex-col items-center justify-center py-1 transition-colors",
-          activePage === "admin"
-            ? "font-semibold text-primary"
-            : "text-on-surface-variant hover:text-on-surface",
-        ].join(" ")}
-      >
-        <span className="material-symbols-outlined text-xl">
-          admin_panel_settings
-        </span>
-        <span className="mt-0.5 font-label-sm text-[10px]">Admin</span>
-      </a>
-
-      <a
-        href="#"
-        className="flex flex-1 flex-col items-center justify-center py-1 text-error"
+      <button
+        type="button"
+        onClick={logout}
+        className={[itemClass, "text-error"].join(" ")}
       >
         <span className="material-symbols-outlined text-xl">logout</span>
         <span className="mt-0.5 font-label-sm text-[10px]">Sair</span>
-      </a>
+      </button>
     </nav>
   );
 }
