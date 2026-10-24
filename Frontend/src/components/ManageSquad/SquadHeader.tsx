@@ -1,4 +1,9 @@
+import type { Roster } from "../../lib/squads";
+import { SECTORS } from "../../lib/users";
+
 interface SquadHeaderProps {
+  squad: Roster["squad"];
+  stats: Roster["stats"];
   search: string;
   onSearchChange: (value: string) => void;
   department: string;
@@ -6,11 +11,11 @@ interface SquadHeaderProps {
   onAddMember: () => void;
 }
 
-interface SquadHeaderProps {
-  onAddMember: () => void;
-}
+const numberFormat = new Intl.NumberFormat("pt-BR");
 
 export function SquadHeader({
+  squad,
+  stats,
   search,
   onSearchChange,
   department,
@@ -33,24 +38,23 @@ export function SquadHeader({
             </span>
 
             <span className="absolute -bottom-1 -right-1 rounded-full bg-tertiary-container px-1.5 py-0.5 font-label-sm text-label-sm font-bold uppercase tracking-wider text-on-tertiary">
-              Ativo
+              {squad.isActive ? "Ativo" : "Inativo"}
             </span>
           </div>
 
-          <div>
+          <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-              <h1 className="font-headline-md text-headline-md text-on-surface sm:font-headline-lg sm:text-headline-lg">
-                Squad CyberTitans
+              <h1 className="font-headline-md text-lg text-on-surface sm:font-headline-lg sm:text-headline-lg">
+                Squad {squad.name}
               </h1>
 
               <span className="rounded-full bg-surface-container-highest px-2.5 py-0.5 font-label-sm text-label-sm tracking-wide text-secondary">
-                ID: #SQUAD-CYB-04
+                ID: #SQ-{squad.id}
               </span>
             </div>
 
             <p className="mt-1.5 max-w-2xl font-body-sm text-body-sm text-on-surface-variant sm:font-body-md sm:text-body-md">
-              Equipe responsável pela arquitetura central, cloud infrastructure
-              e microsserviços de missão crítica da plataforma NEXUS.
+              {squad.description ?? "Este squad ainda não tem uma descrição."}
             </p>
           </div>
         </div>
@@ -66,44 +70,38 @@ export function SquadHeader({
                 Membros Ativos
               </p>
               <p className="font-headline-sm text-headline-sm text-on-surface">
-                8 Colaboradores
+                {stats.memberCount}{" "}
+                {stats.memberCount === 1 ? "Colaborador" : "Colaboradores"}
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-3 rounded-xl bg-surface-container px-3.5 py-2.5 shadow-sm sm:px-4 sm:py-3">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-surface-container-high text-secondary">
-              <span className="material-symbols-outlined text-2xl">
-                analytics
-              </span>
+              <span className="material-symbols-outlined text-2xl">analytics</span>
             </div>
 
             <div className="min-w-0">
               <p className="truncate font-label-sm text-label-sm uppercase tracking-wider text-outline">
-                Média Performance
+                Média por Membro
               </p>
               <p className="font-headline-sm text-headline-sm text-on-surface">
-                1.677 pts / m
+                {numberFormat.format(stats.averagePoints)} pts
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-3 rounded-xl bg-surface-container px-3.5 py-2.5 shadow-sm sm:px-4 sm:py-3">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-surface-container-high text-tertiary">
-              <span className="material-symbols-outlined text-2xl">
-                handshake
-              </span>
+              <span className="material-symbols-outlined text-2xl">schedule</span>
             </div>
 
             <div className="min-w-0">
               <p className="truncate font-label-sm text-label-sm uppercase tracking-wider text-outline">
-                Colaboração
+                Entregas no Prazo
               </p>
               <p className="font-headline-sm text-headline-sm font-bold text-tertiary">
-                94%{" "}
-                <span className="font-body-sm font-normal text-tertiary-fixed-dim">
-                  (Alta)
-                </span>
+                {stats.onTimeRate}%
               </p>
             </div>
           </div>
@@ -119,32 +117,23 @@ export function SquadHeader({
             <input
               value={search}
               onChange={(event) => onSearchChange(event.target.value)}
-              placeholder="Buscar membros por nome, cargo ou tag..."
+              placeholder="Buscar membros por nome, cargo ou e-mail..."
               className="h-11 w-full rounded-xl bg-surface-container-high pl-11 pr-4 font-body-sm text-body-sm text-on-surface outline-none transition-all placeholder:text-outline focus:bg-surface-container-highest sm:font-body-md sm:text-body-md"
-            />{" "}
+            />
           </div>
 
-          <div className="flex items-center gap-2">
-            <select
-              value={department}
-              onChange={(event) => onDepartmentChange(event.target.value)}
-              className="h-11 flex-1 cursor-pointer rounded-xl bg-surface-container-high px-3 font-label-md text-label-md text-on-surface outline-none sm:flex-initial sm:px-4"
-            >
-              <option value="all">Todos os Setores</option>
-              <option value="tech">Engenharia & Backend</option>
-              <option value="frontend">Frontend & UX</option>
-              <option value="devops">DevOps & SRE</option>
-              <option value="qa">QA Automation</option>
-              <option value="product">Produto & Gestão</option>
-            </select>
-            <button
-              type="button"
-              title="Mais filtros"
-              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-surface-container-high text-on-surface-variant transition-colors hover:bg-surface-container-highest hover:text-on-surface"
-            >
-              <span className="material-symbols-outlined text-xl">tune</span>
-            </button>
-          </div>
+          <select
+            value={department}
+            onChange={(event) => onDepartmentChange(event.target.value)}
+            className="h-11 cursor-pointer rounded-xl bg-surface-container-high px-3 font-label-md text-label-md text-on-surface outline-none sm:px-4"
+          >
+            <option value="all">Todos os Setores</option>
+            {SECTORS.map((sector) => (
+              <option key={sector} value={sector}>
+                {sector}
+              </option>
+            ))}
+          </select>
         </div>
 
         <button
@@ -153,7 +142,7 @@ export function SquadHeader({
           className="flex h-11 w-full shrink-0 items-center justify-center gap-2 rounded-xl bg-primary-container px-5 font-headline-sm text-headline-sm text-on-primary-container shadow-[0_0_18px_rgba(6,182,212,0.35)] transition-all hover:bg-primary hover:text-on-primary sm:w-auto"
         >
           <span className="material-symbols-outlined text-lg">person_add</span>
-          <span>+ Adicionar Membro ao Squad</span>
+          <span>Adicionar Membro ao Squad</span>
         </button>
       </div>
     </section>
