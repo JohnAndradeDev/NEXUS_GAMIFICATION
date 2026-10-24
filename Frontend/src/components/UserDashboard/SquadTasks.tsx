@@ -1,115 +1,189 @@
-export function SquadTasks() {
+import { Link } from "react-router";
+import type { SquadMission, SquadOverview } from "../../lib/squads";
+import { formatDue } from "../../lib/tasks";
+import { getInitials } from "../../lib/users";
+
+interface SquadTasksProps {
+  overview: SquadOverview | null;
+  loading: boolean;
+  hasSquad: boolean;
+}
+
+const AVATAR_COLORS = [
+  "bg-primary/20 text-primary",
+  "bg-secondary/20 text-secondary",
+  "bg-tertiary/20 text-tertiary",
+  "bg-surface-container-highest text-on-surface",
+];
+
+function MissionCard({ mission }: { mission: SquadMission }) {
+  const cooperative = mission.assignees.length > 1;
+
   return (
-    <section className="flex flex-col rounded-xl bg-surface-container-low p-space-lg shadow-lg">
-      <div className="mb-space-md flex items-center justify-between">
-        <div className="flex items-center gap-space-xs">
-          <div className="h-6 w-2.5 rounded-full bg-secondary" />
-          <div className="flex items-center gap-2">
-            <h2 className="font-headline-md text-headline-md font-bold text-on-surface">
-              Tarefas do Squad
-            </h2>
-            <span className="rounded-full bg-secondary-container px-2 py-0.5 font-label-sm text-label-sm font-semibold text-on-secondary-container">
-              CyberTitans
+    <div className="rounded-xl bg-surface-container-high/60 p-space-md">
+      <div className="mb-space-sm flex flex-col gap-space-sm sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex min-w-0 flex-col">
+          <div className="mb-1 flex flex-wrap items-center gap-2">
+            <span className="rounded-full bg-primary-container px-2 py-0.5 font-label-sm text-label-sm font-bold text-on-primary-container">
+              {cooperative ? "Missão Cooperativa" : "Missão do Squad"}
+            </span>
+            <span
+              className={[
+                "flex items-center gap-1 font-body-sm text-body-sm",
+                mission.isOverdue ? "text-error" : "text-outline",
+              ].join(" ")}
+            >
+              <span className="material-symbols-outlined text-xs">timer</span>
+              {mission.isOverdue ? "Atrasada" : `Prazo: ${formatDue(mission.dueDate)}`}
+            </span>
+          </div>
+
+          <h3 className="font-headline-sm text-headline-sm font-bold text-on-surface">
+            {mission.title}
+          </h3>
+        </div>
+
+        <div className="flex shrink-0 items-center gap-2 rounded-xl bg-surface-container px-space-md py-space-xs shadow-inner">
+          <span className="material-symbols-outlined text-lg text-tertiary">
+            workspace_premium
+          </span>
+          <div className="flex flex-col">
+            <span className="font-label-sm text-label-sm text-outline">Recompensa</span>
+            <span className="font-label-lg text-label-lg font-extrabold leading-none text-tertiary">
+              +{mission.basePoints} pts
             </span>
           </div>
         </div>
+      </div>
 
-        <span className="material-symbols-outlined text-xl text-secondary">
-          group_work
+      <div className="flex items-center gap-space-sm">
+        <div className="h-2 flex-1 overflow-hidden rounded-full bg-surface-container-highest">
+          <div
+            className="h-full rounded-full bg-linear-to-r from-secondary to-tertiary transition-all duration-700"
+            style={{ width: `${mission.progress}%` }}
+          />
+        </div>
+        <span className="shrink-0 font-label-sm text-label-sm text-on-surface-variant">
+          {mission.progress}%
         </span>
       </div>
+    </div>
+  );
+}
 
-      <div className="relative overflow-hidden rounded-xl bg-surface-container p-space-lg shadow-md">
-        <div className="pointer-events-none absolute right-0 top-0 h-32 w-32 rounded-full bg-secondary/10 blur-2xl" />
+export function SquadTasks({ overview, loading, hasSquad }: SquadTasksProps) {
+  const openMissions = overview?.missions.filter((mission) => mission.status !== "CONCLUIDA") ?? [];
+  const shownMissions = openMissions.slice(0, 2);
+  const members = overview?.members ?? [];
+  const shownMembers = members.slice(0, 4);
+  const extraMembers = members.length - shownMembers.length;
 
-        <div className="mb-space-sm flex flex-col gap-space-sm sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex flex-col">
-            <div className="mb-1 flex items-center gap-2">
-              <span className="rounded-full bg-primary-container px-2 py-0.5 font-label-sm text-label-sm font-bold text-on-primary-container">
-                Missão Cooperativa
+  return (
+    <section className="flex flex-col rounded-xl bg-surface-container-low p-4 shadow-lg sm:p-space-lg">
+      <div className="mb-space-md flex flex-wrap items-center justify-between gap-2">
+        <div className="flex items-center gap-space-xs">
+          <div className="h-6 w-2.5 rounded-full bg-secondary" />
+          <div className="flex flex-wrap items-center gap-2">
+            <h2 className="font-headline-md text-lg font-bold text-on-surface sm:text-headline-md">
+              Tarefas do Squad
+            </h2>
+            {overview && (
+              <span className="rounded-full bg-secondary-container px-2 py-0.5 font-label-sm text-label-sm font-semibold text-on-secondary-container">
+                {overview.squad.name}
               </span>
-              <span className="flex items-center gap-1 font-body-sm text-body-sm text-outline">
-                <span className="material-symbols-outlined text-xs">timer</span>
-                Restam 2 dias
-              </span>
-            </div>
-
-            <h3 className="font-headline-sm text-headline-sm font-bold text-on-surface">
-              Deploy de Infraestrutura Kubernetes Multi-Cloud v3.2
-            </h3>
-          </div>
-
-          <div className="shrink-0 flex items-center gap-2 rounded-xl bg-surface-container-high px-space-md py-space-xs shadow-inner">
-            <span className="material-symbols-outlined text-lg text-tertiary">
-              workspace_premium
-            </span>
-            <div className="flex flex-col">
-              <span className="font-label-sm text-label-sm text-outline">
-                Recompensa
-              </span>
-              <span className="font-label-lg text-label-lg font-extrabold leading-none text-tertiary">
-                +50 pts Squad
-              </span>
-            </div>
+            )}
           </div>
         </div>
 
-        <div className="my-space-md flex flex-col">
-          <div className="mb-2 flex items-center justify-between font-label-md text-label-md">
-            <span className="font-medium text-on-surface-variant">
-              Meta Coletiva do Sprint
-            </span>
-            <span className="font-bold text-tertiary">
-              80% Concluído (8/10 entregas)
-            </span>
-          </div>
-
-          <div className="h-3 w-full overflow-hidden rounded-full bg-surface-container-highest">
-            <div
-              className="h-full rounded-full bg-linear-to-r from-secondary to-tertiary shadow-[0_0_12px_rgba(78,222,163,0.5)] transition-all duration-700"
-              style={{ width: "80%" }}
-            />
-          </div>
-        </div>
-
-        <div className="flex items-center justify-between pt-space-xs">
-          <div className="flex items-center gap-3">
-            <div className="flex -space-x-3 overflow-hidden">
-              <img
-                alt="Lucas"
-                className="h-8 w-8 rounded-full object-cover ring-2 ring-surface-container"
-                src="https://lh3.googleusercontent.com/aida-public/AB6AXuAq6l2BIeMXPJP-QoHaNqIUZJ9MGu8gUUn5q8stpBtzYP2sOhRCu-GUNBvNznX6cEqr1ULrEwt07F4sFiEeexOUNHnwScsOHWJ27rSKbjf0D0MJKEm6Qi8mdfWLEH_V83NmJgV7l663sBcGkWNAlUhlP2cUazFn3IckaSc_sWgmVuPGuo1Bj4x9oNHB9F5IW5NGmRjE_ocr52NBMfEJjQEX_yv7eGdAW3-RSQImRcLZrOoVB_t-Upyh"
-              />
-              <img
-                alt="Camila"
-                className="h-8 w-8 rounded-full object-cover ring-2 ring-surface-container"
-                src="https://lh3.googleusercontent.com/aida-public/AB6AXuBq6enDI1IPPBYfq9tFbEAO0Z98TrnViUm4mYzu9QjmDU5Jf5RXLUU9Z0j6ifN7pMTIPAd6eP0gZDAHi8upN3HNhBNHwCOQcFzBNqZCIlwLtGgF0nfyrU1byopZmXsXoiEsRQTi7GtDdYLrRdaf5fv1LIWDR2YUMQWcDUorpbUGeaLcVOg1E5q8O1P3HUcBecxEK8rJ5zokegD9Cc9wgYvsdDJBk5eTmq8BHzLD_jay9zTOIpAAcbpi"
-              />
-              <img
-                alt="Rodrigo"
-                className="h-8 w-8 rounded-full object-cover ring-2 ring-surface-container"
-                src="https://lh3.googleusercontent.com/aida-public/AB6AXuCV7d1Wm9PMKnD1CTtJxqkiHS4Z0iwL7H3RLP7hXnr9FL111YJdAN6HWn2NOoB7U56pkFkguOf5UGjqwKPOIyWzDD2qE5_XBLljezvyp5KpLBt-EW6P4bAPCj3-kCSBBufKOIgQUZMyLx1smoKlKrMeoWto6eO5vNQNGabbMJhBsqG_nVKqqQLrLlg72Shb0a529jR3PZBHHcZ8SpDataa80_rOL_CHDVmC4iZPSqe0kfKIIT_tYwcc"
-              />
-              <img
-                alt="João"
-                className="h-8 w-8 rounded-full object-cover ring-2 ring-surface-container"
-                src="https://lh3.googleusercontent.com/aida-public/AB6AXuB8EQ7_KYx2UfvLAwIAchBl9v60YPf_X14xbBxVlhydEie0XIEcMFt9qaEkQYxd6BkAbeDpzN_Gw86sAQdlF3kvVE-9trBKLKXLiC_42JIrQGqfnK_67okB4TEW68-FwRNk0jNvvvNZ6TbXtUARSvkAghUmh1vJ8MsKC32tFuV5s04d0jMMhJcpZCo499JvdVotLXke_88Rv4z5patp3oCdyjekMKlP1KUTynsrO2t9LM1-FvtcGsJX"
-              />
-            </div>
-
-            <span className="font-body-sm text-body-sm text-outline">
-              Você + 3 engenheiros operando
-            </span>
-          </div>
-
-          <button className="flex items-center gap-1 font-label-md text-label-md font-bold text-primary transition-colors hover:text-primary-fixed">
-            <span>Painel do Squad</span>
-            <span className="material-symbols-outlined text-base">
-              arrow_forward
-            </span>
-          </button>
-        </div>
+        <span className="material-symbols-outlined text-xl text-secondary">group_work</span>
       </div>
+
+      {!hasSquad && (
+        <div className="flex flex-col items-center py-space-lg text-center">
+          <span className="material-symbols-outlined mb-2 text-4xl text-outline">groups</span>
+          <p className="font-headline-sm text-headline-sm text-on-surface">
+            Você ainda não faz parte de um squad
+          </p>
+          <p className="mt-1 font-body-sm text-body-sm text-outline">
+            Peça ao administrador para vinculá-lo a um squad e as missões coletivas aparecem aqui.
+          </p>
+        </div>
+      )}
+
+      {hasSquad && loading && !overview && (
+        <p className="py-space-lg text-center font-body-sm text-body-sm text-outline">
+          Carregando dados do squad...
+        </p>
+      )}
+
+      {overview && (
+        <div className="relative overflow-hidden rounded-xl bg-surface-container p-4 shadow-md sm:p-space-lg">
+          <div className="pointer-events-none absolute right-0 top-0 h-32 w-32 rounded-full bg-secondary/10 blur-2xl" />
+
+          <div className="relative flex flex-col gap-space-sm">
+            {shownMissions.length === 0 ? (
+              <p className="rounded-xl bg-surface-container-high/60 p-space-md text-center font-body-sm text-body-sm text-outline">
+                Nenhuma missão em aberto no squad no momento.
+              </p>
+            ) : (
+              shownMissions.map((mission) => <MissionCard key={mission.id} mission={mission} />)
+            )}
+          </div>
+
+          <div className="my-space-md flex flex-col">
+            <div className="mb-2 flex flex-wrap items-center justify-between gap-x-2 gap-y-1 font-label-md text-label-md">
+              <span className="font-medium text-on-surface-variant">Meta Coletiva do Ciclo</span>
+              <span className="font-bold text-tertiary">
+                {overview.stats.completionRate}% Concluído ({overview.stats.tasksCompleted}/
+                {overview.stats.tasksTotal} entregas)
+              </span>
+            </div>
+
+            <div className="h-3 w-full overflow-hidden rounded-full bg-surface-container-highest">
+              <div
+                className="h-full rounded-full bg-linear-to-r from-secondary to-tertiary shadow-[0_0_12px_rgba(78,222,163,0.5)] transition-all duration-700"
+                style={{ width: `${overview.stats.completionRate}%` }}
+              />
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center justify-between gap-space-sm pt-space-xs">
+            <div className="flex items-center gap-3">
+              <div className="flex -space-x-3 overflow-hidden">
+                {shownMembers.map((member, index) => (
+                  <span
+                    key={member.id}
+                    title={member.name}
+                    className={[
+                      "flex h-8 w-8 items-center justify-center rounded-full font-label-sm text-label-sm font-bold ring-2 ring-surface-container",
+                      AVATAR_COLORS[index % AVATAR_COLORS.length],
+                    ].join(" ")}
+                  >
+                    {getInitials(member.name)}
+                  </span>
+                ))}
+                {extraMembers > 0 && (
+                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-surface-container-highest font-label-sm text-label-sm text-primary ring-2 ring-surface-container">
+                    +{extraMembers}
+                  </span>
+                )}
+              </div>
+
+              <span className="font-body-sm text-body-sm text-outline">
+                {members.length} {members.length === 1 ? "integrante" : "integrantes"} no squad
+              </span>
+            </div>
+
+            <Link
+              to="/squad"
+              className="flex items-center gap-1 font-label-md text-label-md font-bold text-primary transition-colors hover:text-primary-fixed"
+            >
+              <span>Painel do Squad</span>
+              <span className="material-symbols-outlined text-base">arrow_forward</span>
+            </Link>
+          </div>
+        </div>
+      )}
     </section>
   );
 }

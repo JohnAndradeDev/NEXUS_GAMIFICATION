@@ -1,4 +1,12 @@
-export function QuickMetrics() {
+import type { PointsSummary } from "../../lib/points";
+
+const numberFormat = new Intl.NumberFormat("pt-BR");
+
+interface QuickMetricsProps {
+  summary: PointsSummary | null;
+}
+
+export function QuickMetrics({ summary }: QuickMetricsProps) {
   return (
     <div className="mb-space-lg  grid grid-cols-1 gap-space-md border-t-0 pt-space-md sm:grid-cols-2 lg:grid-cols-4">
       <div className="flex items-center gap-space-md rounded-xl bg-surface-container p-space-md shadow-sm transition-all hover:bg-surface-container-high">
@@ -13,7 +21,7 @@ export function QuickMetrics() {
 
           <div className="flex items-baseline gap-1">
             <span className="font-metric-display text-metric-display font-extrabold text-on-surface">
-              3.420
+              {summary ? numberFormat.format(summary.totalPoints) : "—"}
             </span>
             <span className="font-label-sm text-label-sm font-bold text-primary">
               pts
@@ -24,7 +32,7 @@ export function QuickMetrics() {
             <span className="material-symbols-outlined text-xs">
               trending_up
             </span>{" "}
-            +180 esta semana
+            {summary ? `+${numberFormat.format(summary.weekPoints)} esta semana` : "—"}
           </span>
         </div>
       </div>
@@ -43,15 +51,15 @@ export function QuickMetrics() {
 
           <div className="flex items-baseline gap-1">
             <span className="font-metric-display text-metric-display font-extrabold text-on-surface">
-              12
+              {summary ? summary.streakDays : "—"}
             </span>
             <span className="font-label-sm text-label-sm font-bold text-on-surface">
-              Dias
+              {summary?.streakDays === 1 ? "Dia" : "Dias"}
             </span>
           </div>
 
           <span className="font-body-sm text-body-sm text-secondary-fixed-dim">
-            Bônus de +15% XP ativo
+            {summary && summary.streakDays > 0 ? "Dias seguidos com pontuação" : "Conclua uma missão para começar"}
           </span>
         </div>
       </div>
@@ -68,15 +76,15 @@ export function QuickMetrics() {
 
           <div className="flex items-baseline gap-1">
             <span className="font-metric-display text-metric-display font-extrabold text-on-surface">
-              38
+              {summary ? summary.tasksCompleted : "—"}
             </span>
             <span className="font-label-sm text-label-sm font-normal text-outline">
-              / 45 no ciclo
+              / {summary ? summary.tasksTotal : "—"} atribuídas
             </span>
           </div>
 
           <span className="font-body-sm text-body-sm text-primary">
-            Taxa de entrega: 84.4%
+            Taxa de entrega: {summary ? `${summary.completionRate}%` : "—"}
           </span>
         </div>
       </div>
@@ -93,7 +101,7 @@ export function QuickMetrics() {
 
           <div className="flex items-baseline gap-1">
             <span className="font-metric-display text-metric-display font-extrabold text-on-surface">
-              #3
+              {summary?.squadRank ? `#${summary.squadRank.position}` : "—"}
             </span>
             <span className="font-label-sm text-label-sm font-bold text-secondary">
               no Squad
@@ -101,7 +109,7 @@ export function QuickMetrics() {
           </div>
 
           <span className="font-body-sm text-body-sm text-outline-variant">
-            #12 na Empresa global
+            {summary?.companyRank ? `#${summary.companyRank.position} na empresa (de ${summary.companyRank.total})` : "Sem posição na empresa"}
           </span>
         </div>
       </div>
