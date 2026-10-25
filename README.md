@@ -31,16 +31,16 @@ Cada colaborador pertence a um **squad**, recebe **tarefas** de um gestor e ganh
 
 Principais telas:
 
-| Tela | Quem acessa | O que mostra |
-|---|---|---|
-| Login | Todos | Autenticação com e-mail e senha |
-| Dashboard do usuário | Usuário | Nível e progresso, pontos, sequência, minhas tarefas, tarefas do squad, ranking dos squads, conquistas recentes |
-| Painel do squad | Usuário | Métricas, missões, integrantes, insígnias e atividades do próprio squad |
-| Dashboard do gestor | Gestor | Métricas do squad, criação e gestão de tarefas, ranking e atividades |
-| Gerenciar squad | Gestor | Escalação, ficha de cada integrante, adicionar e remover membros |
-| Painel admin | Administrador | Indicadores, usuários, squads, conquistas e ajustes de pontuação |
-| Ranking | Todos | Colaboradores e squads por período, com pódio e sua posição |
-| Notificações (sino) | Todos | Avisos de tarefas, pontos, conquistas, nível e squad |
+| Tela                 | Quem acessa   | O que mostra                                                                                                    |
+| -------------------- | ------------- | --------------------------------------------------------------------------------------------------------------- |
+| Login                | Todos         | Autenticação com e-mail e senha                                                                                 |
+| Dashboard do usuário | Usuário       | Nível e progresso, pontos, sequência, minhas tarefas, tarefas do squad, ranking dos squads, conquistas recentes |
+| Painel do squad      | Usuário       | Métricas, missões, integrantes, insígnias e atividades do próprio squad                                         |
+| Dashboard do gestor  | Gestor        | Métricas do squad, criação e gestão de tarefas, ranking e atividades                                            |
+| Gerenciar squad      | Gestor        | Escalação, ficha de cada integrante, adicionar e remover membros                                                |
+| Painel admin         | Administrador | Indicadores, usuários, squads, conquistas e ajustes de pontuação                                                |
+| Ranking              | Todos         | Colaboradores e squads por período, com pódio e sua posição                                                     |
+| Notificações (sino)  | Todos         | Avisos de tarefas, pontos, conquistas, nível e squad                                                            |
 
 ## Tecnologias
 
@@ -53,35 +53,46 @@ Principais telas:
 ## Estrutura do projeto
 
 ```text
-nexus/
-├── docker-compose.yml        # PostgreSQL para desenvolvimento
-├── backend/
+NEXUS_GAMIFICATION/
+├── README.md
+├── Backend/
+│   ├── docker-compose.yml        # PostgreSQL para desenvolvimento
+│   ├── .env.example
+│   ├── prisma.config.ts          # config do Prisma (schema, migrations e seed)
 │   ├── prisma/
 │   │   ├── schema.prisma
 │   │   ├── migrations/
-│   │   └── seed.ts           # admin, squads, tarefas e conquistas de exemplo (dev)
-│   ├── prisma.config.ts
+│   │   ├── seed.ts               # admin, squads, tarefas e conquistas de exemplo (dev)
+│   │   ├── seed2.ts              # variação do seed (sem tarefas de exemplo)
+│   │   └── seed3.ts              # variação do seed (sem catálogo de conquistas)
+│   ├── generated/                # client do Prisma (gerado por `prisma generate`, fora do git)
 │   └── src/
-│       ├── app.ts            # plugins globais, tratamento de erros e registro das rotas
+│       ├── app.ts                # plugins globais, tratamento de erros e registro das rotas
 │       ├── server.ts
-│       ├── env.ts            # validação das variáveis de ambiente (Zod)
-│       ├── lib/              # prisma, erros, paginação, níveis, períodos
-│       ├── plugins/          # autenticação/JWT e verificação de origem (CSRF)
+│       ├── env.ts                # validação das variáveis de ambiente (Zod)
+│       ├── lib/                  # prisma, erros, paginação, níveis, períodos, bootstrap-admin
+│       ├── plugins/              # auth.ts (JWT + cookie) e origin-check.ts (proteção CSRF)
 │       └── modules/
 │           ├── auth/  users/  squads/  tasks/  points/
 │           └── rankings/  achievements/  notifications/  admin/
-└── frontend/
+└── Frontend/
+    ├── public/                   # _redirects (proxy da API e fallback da SPA)
     └── src/
-        ├── pages/            # uma página por tela
-        ├── components/       # por tela: AdminDashboard, ManagerDashboard, UserDashboard...
-        ├── layouts/          # AppLayout (sidebar, header, rodapé)
-        ├── routes/           # rotas por perfil (usuário, gestor, admin)
-        ├── contexts/         # autenticação, pontos e notificações
+        ├── main.tsx  App.tsx
+        ├── pages/                # uma página por tela
+        ├── components/           # por tela: AdminDashboard, ManagerDashboard, UserDashboard,
+        │                         #   ManageSquad, SquadPanel, Ranking, Login, NotFound
+        │                         #   e layout/ (sidebar, header, navegação mobile, notificações)
+        ├── layouts/              # AppLayout (sidebar, header, rodapé)
+        ├── routes/               # rotas por perfil (usuário, gestor, admin) e autenticação
+        ├── contexts/             # autenticação, pontos e notificações
         ├── hooks/
-        └── lib/              # cliente da API e tipos
+        ├── lib/                  # cliente da API e tipos
+        ├── styles/               # CSS global e específicos de tela
+        └── assets/
 ```
 
-Cada módulo do backend segue o mesmo desenho: `*.routes.ts` (rotas e validação com Zod) e, quando há regra reutilizável, `*.service.ts`.
+Cada módulo do backend segue o mesmo desenho: `*.routes.ts` (rotas e validação com Zod) e, quando há regra reutilizável, `*.service.ts`. Os módulos `squads` (rotas separadas para admin e membros) e `users` (`user.select.ts`) têm arquivos extras.
 
 ## Como executar localmente
 
@@ -113,10 +124,10 @@ O `docker-compose.yml` cria o banco `apinexus`. Um `DATABASE_URL` compatível é
 
 O seed cria estes acessos, além de 5 squads, 3 tarefas de exemplo e 9 conquistas:
 
-| Perfil | E-mail | Senha |
-|---|---|---|
-| Administrador | `admin@nexus.com` | `Admin1234` |
-| Gestor (squad CyberTitans) | `gestor@nexus.com` | `Gestor1234` |
+| Perfil                      | E-mail              | Senha         |
+| --------------------------- | ------------------- | ------------- |
+| Administrador               | `admin@nexus.com`   | `Admin1234`   |
+| Gestor (squad CyberTitans)  | `gestor@nexus.com`  | `Gestor1234`  |
 | Usuário (squad CyberTitans) | `usuario@nexus.com` | `Usuario1234` |
 
 Em produção o seed cria **apenas** o administrador, usando `SEED_ADMIN_EMAIL` e `SEED_ADMIN_PASSWORD` (a senha é obrigatória). Troque a senha no primeiro acesso.
@@ -127,17 +138,17 @@ Não há cadastro público: os usuários são criados pelo administrador.
 
 ### Backend (`backend/.env`)
 
-| Variável | Obrigatória | Descrição |
-|---|---|---|
-| `NODE_ENV` | Não | `development` (padrão) ou `production` |
-| `PORT` | Não | Porta da API (padrão `3000`) |
-| `DATABASE_URL` | Sim | URL de conexão do PostgreSQL |
-| `JWT_SECRET` | Sim | Segredo do token, com 16 caracteres ou mais. Use um valor longo e aleatório |
-| `JWT_EXPIRES_IN_SECONDS` | Não | Validade do token e do cookie (padrão `86400`, ou seja, 24 h) |
-| `FRONTEND_URL` | Sim | Origem exata do frontend, sem barra no final. Usada no CORS e na verificação de origem |
-| `SEED_ADMIN_EMAIL` | Não | E-mail do admin criado pelo seed (padrão `admin@nexus.com`) |
-| `SEED_ADMIN_PASSWORD` | Em produção | Senha do admin criado pelo seed |
-| `DEMO_USER_EMAIL` | Não | Se definido, a senha dessa conta de demonstração não pode ser alterada |
+| Variável                 | Obrigatória | Descrição                                                                              |
+| ------------------------ | ----------- | -------------------------------------------------------------------------------------- |
+| `NODE_ENV`               | Não         | `development` (padrão) ou `production`                                                 |
+| `PORT`                   | Não         | Porta da API (padrão `3000`)                                                           |
+| `DATABASE_URL`           | Sim         | URL de conexão do PostgreSQL                                                           |
+| `JWT_SECRET`             | Sim         | Segredo do token, com 16 caracteres ou mais. Use um valor longo e aleatório            |
+| `JWT_EXPIRES_IN_SECONDS` | Não         | Validade do token e do cookie (padrão `86400`, ou seja, 24 h)                          |
+| `FRONTEND_URL`           | Sim         | Origem exata do frontend, sem barra no final. Usada no CORS e na verificação de origem |
+| `SEED_ADMIN_EMAIL`       | Não         | E-mail do admin criado pelo seed (padrão `admin@nexus.com`)                            |
+| `SEED_ADMIN_PASSWORD`    | Em produção | Senha do admin criado pelo seed                                                        |
+| `DEMO_USER_EMAIL`        | Não         | Se definido, a senha dessa conta de demonstração não pode ser alterada                 |
 
 ```env
 NODE_ENV=development
@@ -162,24 +173,24 @@ Nunca envie arquivos `.env` ao repositório.
 
 ### Backend
 
-| Comando | O que faz |
-|---|---|
-| `npm run dev` | Servidor com recarga automática |
-| `npm run build` | Gera o Prisma Client e compila o TypeScript |
-| `npm start` | Inicia a versão compilada |
-| `npx prisma migrate dev` | Cria e aplica migrations em desenvolvimento |
-| `npx prisma migrate deploy` | Aplica as migrations já versionadas (produção) |
-| `npx prisma generate` | Gera o Prisma Client (rode depois de mudar o `schema.prisma`) |
-| `npx prisma db seed` | Popula o banco |
-| `npx prisma studio` | Interface para ver os dados |
+| Comando                     | O que faz                                                     |
+| --------------------------- | ------------------------------------------------------------- |
+| `npm run dev`               | Servidor com recarga automática                               |
+| `npm run build`             | Gera o Prisma Client e compila o TypeScript                   |
+| `npm start`                 | Inicia a versão compilada                                     |
+| `npx prisma migrate dev`    | Cria e aplica migrations em desenvolvimento                   |
+| `npx prisma migrate deploy` | Aplica as migrations já versionadas (produção)                |
+| `npx prisma generate`       | Gera o Prisma Client (rode depois de mudar o `schema.prisma`) |
+| `npx prisma db seed`        | Popula o banco                                                |
+| `npx prisma studio`         | Interface para ver os dados                                   |
 
 ### Frontend
 
-| Comando | O que faz |
-|---|---|
-| `npm run dev` | Servidor de desenvolvimento |
-| `npm run build` | Verifica os tipos e gera a versão de produção |
-| `npm run preview` | Serve a versão de produção localmente |
+| Comando           | O que faz                                     |
+| ----------------- | --------------------------------------------- |
+| `npm run dev`     | Servidor de desenvolvimento                   |
+| `npm run build`   | Verifica os tipos e gera a versão de produção |
+| `npm run preview` | Serve a versão de produção localmente         |
 
 ## Deploy
 
@@ -194,12 +205,12 @@ A aplicação roda em três serviços separados. Ajuste os comandos aos scripts 
 
 ### 2. Backend (Render, Web Service)
 
-| Campo | Valor sugerido |
-|---|---|
-| Root Directory | `backend` |
-| Build Command | `npm install --include=dev && npm run build && npx prisma migrate deploy` |
-| Start Command | `npm start` |
-| Health Check Path | `/health` |
+| Campo             | Valor sugerido                                                            |
+| ----------------- | ------------------------------------------------------------------------- |
+| Root Directory    | `backend`                                                                 |
+| Build Command     | `npm install --include=dev && npm run build && npx prisma migrate deploy` |
+| Start Command     | `npm start`                                                               |
+| Health Check Path | `/health`                                                                 |
 
 Variáveis: `NODE_ENV=production`, `DATABASE_URL`, `JWT_SECRET`, `FRONTEND_URL` (a URL exata do Netlify, por exemplo `https://seu-app.netlify.app`) e, opcionalmente, as demais da tabela acima.
 
@@ -207,12 +218,12 @@ O `--include=dev` garante que `prisma` e `typescript` estejam disponíveis no bu
 
 ### 3. Frontend (Netlify)
 
-| Campo | Valor |
-|---|---|
-| Base directory | `frontend` |
-| Build command | `npm run build` |
-| Publish directory | `frontend/dist` |
-| Variável | `VITE_API_URL=https://SEU-BACKEND.onrender.com/api` |
+| Campo             | Valor                                               |
+| ----------------- | --------------------------------------------------- |
+| Base directory    | `frontend`                                          |
+| Build command     | `npm run build`                                     |
+| Publish directory | `frontend/dist`                                     |
+| Variável          | `VITE_API_URL=https://SEU-BACKEND.onrender.com/api` |
 
 Como o app usa `BrowserRouter`, o Netlify precisa redirecionar todas as rotas para o `index.html`. Sem isso, atualizar a página em `/squad` dá erro 404. Crie `frontend/public/_redirects` com:
 
@@ -228,20 +239,20 @@ Como o app usa `BrowserRouter`, o Netlify precisa redirecionar todas as rotas pa
 
 ## Perfis de usuário
 
-| Capacidade | Usuário | Gestor | Admin |
-|---|:---:|:---:|:---:|
-| Ver o próprio perfil, trocar a senha e editar nome e avatar | ✅ | ✅ | ✅ |
-| Ver e concluir as próprias tarefas | ✅ | ✅ | — |
-| Ver pontos, nível, sequência e conquistas | ✅ | ✅ | — |
-| Ver o painel do próprio squad | ✅ | ✅ | ✅ |
-| Ver rankings | ✅ | ✅ | ✅ |
-| Criar, editar e cancelar tarefas | — | ✅ (só do seu squad) | ✅ |
-| Gerenciar responsáveis das tarefas | — | ✅ (só do seu squad) | ✅ |
-| Adicionar e remover membros do squad | — | ✅ (só do seu squad) | ✅ |
-| Cadastrar, editar, ativar e desativar usuários | — | — | ✅ |
-| Criar, editar e desativar squads e definir o gestor | — | — | ✅ |
-| Lançar bônus, ajustes e penalidades de pontos | — | — | ✅ |
-| Criar e editar conquistas, conceder e recalcular | — | — | ✅ |
+| Capacidade                                                  | Usuário |        Gestor        | Admin |
+| ----------------------------------------------------------- | :-----: | :------------------: | :---: |
+| Ver o próprio perfil, trocar a senha e editar nome e avatar |   ✅    |          ✅          |  ✅   |
+| Ver e concluir as próprias tarefas                          |   ✅    |          ✅          |   —   |
+| Ver pontos, nível, sequência e conquistas                   |   ✅    |          ✅          |   —   |
+| Ver o painel do próprio squad                               |   ✅    |          ✅          |  ✅   |
+| Ver rankings                                                |   ✅    |          ✅          |  ✅   |
+| Criar, editar e cancelar tarefas                            |    —    | ✅ (só do seu squad) |  ✅   |
+| Gerenciar responsáveis das tarefas                          |    —    | ✅ (só do seu squad) |  ✅   |
+| Adicionar e remover membros do squad                        |    —    | ✅ (só do seu squad) |  ✅   |
+| Cadastrar, editar, ativar e desativar usuários              |    —    |          —           |  ✅   |
+| Criar, editar e desativar squads e definir o gestor         |    —    |          —           |  ✅   |
+| Lançar bônus, ajustes e penalidades de pontos               |    —    |          —           |  ✅   |
+| Criar e editar conquistas, conceder e recalcular            |    —    |          —           |  ✅   |
 
 ## Regras do jogo
 
@@ -275,14 +286,14 @@ São os dias seguidos com pelo menos uma pontuação positiva, contados no fuso 
 
 ### Conquistas
 
-| Tipo | Desbloqueia quando |
-|---|---|
-| Missões concluídas | A pessoa conclui a quantidade de tarefas da meta |
-| Pontos acumulados | O total de pontos atinge a meta |
-| Sequência de dias | A sequência atinge a meta |
+| Tipo               | Desbloqueia quando                                    |
+| ------------------ | ----------------------------------------------------- |
+| Missões concluídas | A pessoa conclui a quantidade de tarefas da meta      |
+| Pontos acumulados  | O total de pontos atinge a meta                       |
+| Sequência de dias  | A sequência atinge a meta                             |
 | Posição no ranking | A pessoa chega ao top N da empresa (exige ter pontos) |
-| Missões em equipe | Conclui tarefas que tinham dois ou mais responsáveis |
-| Manual | Só o admin concede |
+| Missões em equipe  | Conclui tarefas que tinham dois ou mais responsáveis  |
+| Manual             | Só o admin concede                                    |
 
 O desbloqueio é automático, ao concluir tarefas ou receber pontos, e também quando o admin cria, reativa ou recalcula uma conquista. Cada conquista paga um **bônus de pontos** como transação própria. Ninguém ganha a mesma conquista duas vezes. Depois que alguém desbloqueia, a regra (tipo e meta) não muda mais. Conquistas desativadas não são concedidas, mas o histórico fica.
 
@@ -296,89 +307,89 @@ Base: `/api`. Respostas em JSON, listas paginadas (`page`, `perPage`, padrão de
 
 ### Autenticação
 
-| Método | Rota | Acesso | Descrição |
-|---|---|---|---|
-| POST | `/auth/login` | Público | Entra e grava o cookie de sessão |
-| POST | `/auth/logout` | Público | Encerra a sessão |
-| GET | `/auth/me` | Autenticado | Dados do usuário logado |
-| PATCH | `/auth/change-password` | Autenticado | Troca a própria senha (exige a senha atual) |
+| Método | Rota                    | Acesso      | Descrição                                   |
+| ------ | ----------------------- | ----------- | ------------------------------------------- |
+| POST   | `/auth/login`           | Público     | Entra e grava o cookie de sessão            |
+| POST   | `/auth/logout`          | Público     | Encerra a sessão                            |
+| GET    | `/auth/me`              | Autenticado | Dados do usuário logado                     |
+| PATCH  | `/auth/change-password` | Autenticado | Troca a própria senha (exige a senha atual) |
 
 ### Usuários
 
-| Método | Rota | Acesso | Descrição |
-|---|---|---|---|
-| GET | `/users` | Admin | Lista com busca, filtros (perfil, status, setor, squad) e ordenação |
-| GET | `/users/:id` | Admin, o próprio, gestor do mesmo squad | Dados de um usuário |
-| POST | `/users` | Admin | Cadastra um usuário |
-| PATCH | `/users/:id` | O próprio (nome e avatar) ou Admin | Edita |
-| PATCH | `/users/:id/status` | Admin | Ativa ou desativa |
+| Método | Rota                | Acesso                                  | Descrição                                                           |
+| ------ | ------------------- | --------------------------------------- | ------------------------------------------------------------------- |
+| GET    | `/users`            | Admin                                   | Lista com busca, filtros (perfil, status, setor, squad) e ordenação |
+| GET    | `/users/:id`        | Admin, o próprio, gestor do mesmo squad | Dados de um usuário                                                 |
+| POST   | `/users`            | Admin                                   | Cadastra um usuário                                                 |
+| PATCH  | `/users/:id`        | O próprio (nome e avatar) ou Admin      | Edita                                                               |
+| PATCH  | `/users/:id/status` | Admin                                   | Ativa ou desativa                                                   |
 
 ### Squads
 
-| Método | Rota | Acesso | Descrição |
-|---|---|---|---|
-| GET | `/squads` | Admin, Gestor | Lista simples dos squads ativos |
-| GET | `/squads/all` | Admin | Lista completa, paginada |
-| POST | `/squads` | Admin | Cria (nome e descrição, com gestor opcional) |
-| PATCH | `/squads/:id` | Admin | Edita nome, descrição e gestor |
-| PATCH | `/squads/:id/status` | Admin | Ativa ou desativa |
-| GET | `/squads/:id/overview` | Membros do squad e Admin | Painel do squad |
-| GET | `/squads/:id/members` | Gestor do squad, Admin | Escalação com desempenho |
-| GET | `/squads/:id/candidates` | Gestor do squad, Admin | Colaboradores sem squad |
-| POST | `/squads/:id/members` | Gestor do squad, Admin | Adiciona um membro |
-| DELETE | `/squads/:id/members/:userId` | Gestor do squad, Admin | Remove um membro |
+| Método | Rota                          | Acesso                   | Descrição                                    |
+| ------ | ----------------------------- | ------------------------ | -------------------------------------------- |
+| GET    | `/squads`                     | Admin, Gestor            | Lista simples dos squads ativos              |
+| GET    | `/squads/all`                 | Admin                    | Lista completa, paginada                     |
+| POST   | `/squads`                     | Admin                    | Cria (nome e descrição, com gestor opcional) |
+| PATCH  | `/squads/:id`                 | Admin                    | Edita nome, descrição e gestor               |
+| PATCH  | `/squads/:id/status`          | Admin                    | Ativa ou desativa                            |
+| GET    | `/squads/:id/overview`        | Membros do squad e Admin | Painel do squad                              |
+| GET    | `/squads/:id/members`         | Gestor do squad, Admin   | Escalação com desempenho                     |
+| GET    | `/squads/:id/candidates`      | Gestor do squad, Admin   | Colaboradores sem squad                      |
+| POST   | `/squads/:id/members`         | Gestor do squad, Admin   | Adiciona um membro                           |
+| DELETE | `/squads/:id/members/:userId` | Gestor do squad, Admin   | Remove um membro                             |
 
 ### Tarefas
 
-| Método | Rota | Acesso | Descrição |
-|---|---|---|---|
-| GET | `/tasks` | Autenticado | Usuário vê as suas, gestor as do squad, admin todas. Filtros: status, dificuldade, prazo, busca, atrasadas |
-| POST | `/tasks` | Gestor, Admin | Cria e atribui |
-| PATCH | `/tasks/:id` | Gestor do squad, Admin | Edita |
-| PATCH | `/tasks/:id/status` | Responsável, Gestor, Admin | Iniciar, concluir (gera pontos) ou cancelar |
-| POST | `/tasks/:id/assignments` | Gestor do squad, Admin | Adiciona responsáveis |
-| DELETE | `/tasks/:id/assignments/:userId` | Gestor do squad, Admin | Remove um responsável |
+| Método | Rota                             | Acesso                     | Descrição                                                                                                  |
+| ------ | -------------------------------- | -------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| GET    | `/tasks`                         | Autenticado                | Usuário vê as suas, gestor as do squad, admin todas. Filtros: status, dificuldade, prazo, busca, atrasadas |
+| POST   | `/tasks`                         | Gestor, Admin              | Cria e atribui                                                                                             |
+| PATCH  | `/tasks/:id`                     | Gestor do squad, Admin     | Edita                                                                                                      |
+| PATCH  | `/tasks/:id/status`              | Responsável, Gestor, Admin | Iniciar, concluir (gera pontos) ou cancelar                                                                |
+| POST   | `/tasks/:id/assignments`         | Gestor do squad, Admin     | Adiciona responsáveis                                                                                      |
+| DELETE | `/tasks/:id/assignments/:userId` | Gestor do squad, Admin     | Remove um responsável                                                                                      |
 
 ### Pontuação
 
-| Método | Rota | Acesso | Descrição |
-|---|---|---|---|
-| GET | `/points/me` | Autenticado | Resumo: total, semana, nível, sequência e posições |
-| GET | `/points/me/history` | Autenticado | Histórico de pontos |
-| GET | `/points/users/:id/history` | Admin | Histórico de qualquer usuário |
-| POST | `/points/adjustments` | Admin | Bônus, ajuste ou penalidade (com motivo) |
+| Método | Rota                        | Acesso      | Descrição                                          |
+| ------ | --------------------------- | ----------- | -------------------------------------------------- |
+| GET    | `/points/me`                | Autenticado | Resumo: total, semana, nível, sequência e posições |
+| GET    | `/points/me/history`        | Autenticado | Histórico de pontos                                |
+| GET    | `/points/users/:id/history` | Admin       | Histórico de qualquer usuário                      |
+| POST   | `/points/adjustments`       | Admin       | Bônus, ajuste ou penalidade (com motivo)           |
 
 ### Rankings
 
-| Método | Rota | Acesso | Descrição |
-|---|---|---|---|
-| GET | `/rankings/users` | Autenticado | Colaboradores. Parâmetros: `period` (`week`, `month`, `all`) e `squadId` |
-| GET | `/rankings/squads` | Autenticado | Squads. Parâmetro: `period` |
+| Método | Rota               | Acesso      | Descrição                                                                |
+| ------ | ------------------ | ----------- | ------------------------------------------------------------------------ |
+| GET    | `/rankings/users`  | Autenticado | Colaboradores. Parâmetros: `period` (`week`, `month`, `all`) e `squadId` |
+| GET    | `/rankings/squads` | Autenticado | Squads. Parâmetro: `period`                                              |
 
 Ambas devolvem também a posição de quem está logado (`me`).
 
 ### Conquistas
 
-| Método | Rota | Acesso | Descrição |
-|---|---|---|---|
-| GET | `/achievements/me` | Autenticado | Últimas desbloqueadas e a próxima da fila |
-| GET | `/achievements` | Admin | Catálogo completo |
-| POST | `/achievements` | Admin | Cria |
-| PATCH | `/achievements/:id` | Admin | Edita |
-| PATCH | `/achievements/:id/status` | Admin | Ativa ou desativa |
-| POST | `/achievements/:id/award` | Admin | Concede a um usuário |
-| POST | `/achievements/recalculate` | Admin | Reaplica as regras a todos |
+| Método | Rota                        | Acesso      | Descrição                                 |
+| ------ | --------------------------- | ----------- | ----------------------------------------- |
+| GET    | `/achievements/me`          | Autenticado | Últimas desbloqueadas e a próxima da fila |
+| GET    | `/achievements`             | Admin       | Catálogo completo                         |
+| POST   | `/achievements`             | Admin       | Cria                                      |
+| PATCH  | `/achievements/:id`         | Admin       | Edita                                     |
+| PATCH  | `/achievements/:id/status`  | Admin       | Ativa ou desativa                         |
+| POST   | `/achievements/:id/award`   | Admin       | Concede a um usuário                      |
+| POST   | `/achievements/recalculate` | Admin       | Reaplica as regras a todos                |
 
 ### Notificações, métricas e saúde
 
-| Método | Rota | Acesso | Descrição |
-|---|---|---|---|
-| GET | `/notifications` | Autenticado | Lista as suas, com o total de não lidas |
-| GET | `/notifications/unread-count` | Autenticado | Só o contador |
-| PATCH | `/notifications/:id/read` | Autenticado | Marca uma como lida |
-| PATCH | `/notifications/read-all` | Autenticado | Marca todas como lidas |
-| GET | `/admin/metrics` | Admin | Indicadores gerais da plataforma |
-| GET | `/health` | Público | Verificação de saúde (na raiz, fora de `/api`) |
+| Método | Rota                          | Acesso      | Descrição                                      |
+| ------ | ----------------------------- | ----------- | ---------------------------------------------- |
+| GET    | `/notifications`              | Autenticado | Lista as suas, com o total de não lidas        |
+| GET    | `/notifications/unread-count` | Autenticado | Só o contador                                  |
+| PATCH  | `/notifications/:id/read`     | Autenticado | Marca uma como lida                            |
+| PATCH  | `/notifications/read-all`     | Autenticado | Marca todas como lidas                         |
+| GET    | `/admin/metrics`              | Admin       | Indicadores gerais da plataforma               |
+| GET    | `/health`                     | Público     | Verificação de saúde (na raiz, fora de `/api`) |
 
 ## Segurança
 

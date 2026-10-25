@@ -7,10 +7,6 @@ export function AdminHeader({ onNewUser }: AdminHeaderProps) {
     <section className="mb-space-lg flex flex-col justify-between gap-space-md sm:flex-row sm:items-center">
       <div className="flex flex-col gap-space-xs">
         <div className="flex flex-wrap items-center gap-2">
-          <span className="rounded bg-surface-container-high px-2 py-0.5 font-label-sm text-label-sm uppercase tracking-widest text-primary">
-            Core Engine • Governance Console
-          </span>
-
           <span className="flex items-center gap-1.5 rounded-full bg-secondary-container px-2.5 py-0.5 text-on-secondary-container">
             <span className="material-symbols-outlined animate-spin text-xs text-secondary">
               shield_locked
@@ -26,10 +22,6 @@ export function AdminHeader({ onNewUser }: AdminHeaderProps) {
           <h1 className="font-display-lg-mobile text-2xl tracking-tight text-on-surface sm:font-display-lg sm:text-display-lg">
             Painel de Administração Global
           </h1>
-
-          <span className="hidden font-headline-sm text-headline-sm text-outline md:inline">
-            / NEXUS Enterprise
-          </span>
         </div>
       </div>
 
