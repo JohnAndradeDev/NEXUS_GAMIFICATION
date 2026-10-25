@@ -2,10 +2,10 @@
 
 Plataforma corporativa de gamificação para motivar funcionários por meio de tarefas, squads, pontuação, níveis, rankings e conquistas.
 
-<!-- Cole aqui os links da demonstração e, se quiser, prints das telas (por exemplo, em docs/):
-- Aplicação: https://SEU-APP.netlify.app
-- API: https://SEU-BACKEND.onrender.com/health
--->
+
+- Aplicação: https://nexus-gamification.netlify.app
+- API: https://nexus-gamification-api.onrender.com/health
+
 
 ## Sumário
 
