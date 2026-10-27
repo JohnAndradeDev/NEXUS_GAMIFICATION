@@ -1,2 +1,3 @@
-/api/*  https://nexus-gamification-api.onrender.com/api/:splat  200
-/*      /index.html                                  200
+/api/health  https://nexus-gamification-api.onrender.com/health       200
+/api/*       https://nexus-gamification-api.onrender.com/api/:splat   200
+/*           /index.html                                              200
