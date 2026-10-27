@@ -5,8 +5,11 @@ type ServerStatus = "checking" | "online" | "offline";
 const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3000/api";
 const CHECK_MS = 60_000;
 
-// a rota /health fica na raiz do servidor, fora do prefixo /api
 function healthUrl() {
+  if (API_URL.startsWith("/")) {
+    return `${API_URL}/health`.replace("//", "/");
+  }
+
   try {
     return new URL("/health", API_URL).toString();
   } catch {
@@ -14,16 +17,30 @@ function healthUrl() {
   }
 }
 
-const STATUS_VIEW: Record<ServerStatus, { label: string; text: string; dot: string }> = {
-  checking: { label: "Verificando servidor...", text: "text-outline", dot: "bg-outline" },
-  online: { label: "Servidor online", text: "text-tertiary", dot: "bg-tertiary" },
-  offline: { label: "Servidor indisponível", text: "text-error", dot: "bg-error" },
+const STATUS_VIEW: Record<
+  ServerStatus,
+  { label: string; text: string; dot: string }
+> = {
+  checking: {
+    label: "Verificando servidor...",
+    text: "text-outline",
+    dot: "bg-outline",
+  },
+  online: {
+    label: "Servidor online",
+    text: "text-tertiary",
+    dot: "bg-tertiary",
+  },
+  offline: {
+    label: "Servidor indisponível",
+    text: "text-error",
+    dot: "bg-error",
+  },
 };
 
 export function Footer() {
   const [status, setStatus] = useState<ServerStatus>("checking");
 
-  // consulta a API de verdade, em vez de mostrar um aviso fixo
   useEffect(() => {
     const url = healthUrl();
     if (!url) {
@@ -61,10 +78,14 @@ export function Footer() {
     <footer className="w-full border-t border-surface-container-highest/40 bg-surface-container-lowest px-4 py-space-md sm:px-gutter">
       <div className="flex w-full flex-col items-center justify-between gap-space-xs text-center font-body-sm text-body-sm text-outline md:flex-row md:text-left">
         <p>
-          NEXUS © {new Date().getFullYear()} • Sistema Corporativo de Gamificação e Performance
+          NEXUS © {new Date().getFullYear()} • Sistema Corporativo de
+          Gamificação e Performance
         </p>
 
-        <span role="status" className={["flex items-center gap-1.5", view.text].join(" ")}>
+        <span
+          role="status"
+          className={["flex items-center gap-1.5", view.text].join(" ")}
+        >
           <span
             className={[
               "h-1.5 w-1.5 rounded-full",
